@@ -432,6 +432,9 @@ func (s *stream) StreamID() protocol.StreamID {
 	return s.streamID
 }
 
+func (s *stream) ReadPosInFrame() int {
+	return s.readPosInFrame
+}
 func (s *stream) GetBytesSent() (protocol.ByteCount, error) {
 	return s.flowControlManager.GetBytesSent(s.streamID)
 }
