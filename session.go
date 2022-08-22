@@ -55,7 +55,7 @@ type sessionToSend struct{
 	connectionID protocol.ConnectionID
 	perspective  protocol.Perspective
 	version      protocol.VersionNumber
-	configVersions       Config.Versions
+	configVersions       Config
 	paths        map[protocol.PathID]path
 	closedPaths  map[protocol.PathID]bool
 	pathsLock    sync.RWMutex
