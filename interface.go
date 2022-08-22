@@ -30,6 +30,7 @@ type Stream interface {
 	// after a fixed time limit; see SetDeadline and SetWriteDeadline.
 	io.Writer
 	io.Closer
+	ReadPosInFrame() readPosInFrame
 	StreamID() StreamID
 	// Reset closes the stream with an error.
 	Reset(error)
