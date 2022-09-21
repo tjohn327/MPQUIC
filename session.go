@@ -130,7 +130,7 @@ func (s *session) GetConfig() Config {
 }
 func (s *session) GetPaths() map[protocol.PathID]*path {
 	//var path1 map[protocol.PathID]path
-	
+	fmt.Printf("\n conn: %+v \n", s.paths[0].GetConn())
 	return s.paths
 }
 

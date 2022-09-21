@@ -50,6 +50,11 @@ type path struct {
 	timer           *utils.Timer
 }
 
+//add getters
+func (p *path) GetConn() connection{
+	return p.conn
+}
+
 // setup initializes values that are independent of the perspective
 func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
 	p.rttStats = &congestion.RTTStats{}
