@@ -128,6 +128,13 @@ type session struct {
 func (s *session) GetConfig() Config {
 	return *s.config
 }
+func (s *session) GetPaths() map[protocol.PathID]path {
+	var path1 map[protocol.PathID]path
+	for index := range s.paths {
+		path1[index]=*s.paths[index]
+	}
+	return path1
+}
 
 var _ Session = &session{}
 

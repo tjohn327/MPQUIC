@@ -82,6 +82,7 @@ type Session interface {
 	Context() context.Context
 
 	GetConfig() Config
+	GetPaths() map[protocol.PathID]path
 }
 
 // A NonFWSession is a QUIC connection between two peers half-way through the handshake.
