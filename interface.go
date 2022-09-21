@@ -75,14 +75,14 @@ type Session interface {
 	LocalAddr() net.Addr
 	// RemoteAddr returns the address of the peer.
 	RemoteAddr() net.Addr
-	// Close closes the connection. The error will be sent to the remote peer in a CONNECTION_CLOSE frame. An error value of nil is allowed and will cause a normal PeerGoingAway to be sent.
+	// Close closes the connesction. The error will be sent to the remote peer in a CONNECTION_CLOSE frame. An error value of nil is allowed and will cause a normal PeerGoingAway to be sent.
 	Close(error) error
 	// The context is cancelled when the session is closed.
 	// Warning: This API should not be considered stable and might change soon.
 	Context() context.Context
 
 	GetConfig() Config
-	GetPaths() map[protocol.PathID]path
+	GetPaths() map[protocol.PathID]*path
 }
 
 // A NonFWSession is a QUIC connection between two peers half-way through the handshake.
