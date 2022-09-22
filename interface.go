@@ -5,9 +5,13 @@ import (
 	"io"
 	"net"
 	"time"
+	"sync"
 
+	"github.com/lucas-clemente/quic-go/internal/utils"
 	"github.com/lucas-clemente/quic-go/internal/handshake"
 	"github.com/lucas-clemente/quic-go/internal/protocol"
+	"github.com/lucas-clemente/quic-go/congestion"
+	"github.com/lucas-clemente/quic-go/internal/flowcontrol"
 )
 
 // The StreamID is the ID of a QUIC stream.
@@ -130,6 +134,90 @@ type Config struct {
 	CreatePaths bool
 }
 
+type handshakeEvent struct {
+	encLevel protocol.EncryptionLevel
+	err      error
+}
+
+type closeError struct {
+	err    error
+	remote bool
+}
+
+// A Session is a QUIC session
+type session struct {
+	connectionID protocol.ConnectionID
+	perspective  protocol.Perspective
+	version      protocol.VersionNumber
+	config       *Config
+
+	paths        map[protocol.PathID]*path
+	closedPaths  map[protocol.PathID]bool
+	pathsLock    sync.RWMutex
+
+	createPaths bool
+
+	streamsMap *streamsMap
+
+	rttStats *congestion.RTTStats
+
+	remoteRTTs         map[protocol.PathID]time.Duration
+	lastPathsFrameSent time.Time
+
+	streamFramer          *streamFramer
+
+	flowControlManager flowcontrol.FlowControlManager
+
+	unpacker unpacker
+	packer   *packetPacker
+
+	peerBlocked bool
+
+	cryptoSetup handshake.CryptoSetup
+
+	receivedPackets  chan *receivedPacket
+	sendingScheduled chan struct{}
+	// closeChan is used to notify the run loop that it should terminate.
+	closeChan chan closeError
+	closeOnce sync.Once
+
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+
+	// when we receive too many undecryptable packets during the handshake, we send a Public reset
+	// but only after a time of protocol.PublicResetTimeout has passed
+	undecryptablePackets                   []*receivedPacket
+	receivedTooManyUndecrytablePacketsTime time.Time
+
+	// this channel is passed to the CryptoSetup and receives the current encryption level
+	// it is closed as soon as the handshake is complete
+	aeadChanged       <-chan protocol.EncryptionLevel
+	handshakeComplete bool
+	// will be closed as soon as the handshake completes, and receive any error that might occur until then
+	// it is used to block WaitUntilHandshakeComplete()
+	handshakeCompleteChan chan error
+	// handshakeChan receives handshake events and is closed as soon the handshake completes
+	// the receiving end of this channel is passed to the creator of the session
+	// it receives at most 3 handshake events: 2 when the encryption level changes, and one error
+	handshakeChan chan<- handshakeEvent
+
+	connectionParameters handshake.ConnectionParametersManager
+
+	sessionCreationTime     time.Time
+	lastNetworkActivityTime time.Time
+
+	timer           *utils.Timer
+	// keepAlivePingSent stores whether a Ping frame was sent to the peer or not
+	// it is reset as soon as we receive a packet from the peer
+	keepAlivePingSent bool
+
+	pathTimers chan *path
+
+	pathManager         *pathManager
+	pathManagerLaunched bool
+
+	scheduler           *scheduler
+}
 // A Listener for incoming QUIC connections
 type Listener interface {
 	// Close the server, sending CONNECTION_CLOSE frames to each peer.
