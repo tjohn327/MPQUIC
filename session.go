@@ -41,7 +41,7 @@ var (
 	newCryptoSetupClient = handshake.NewCryptoSetupClient
 )
 func (s *session) GetMarshal() []byte {
-	res, _ := json.Marshal(s)
+	res, _ := json.Marshal(&s)
     fmt.Printf("session: %s\n", string(res))
 	return res
 }
