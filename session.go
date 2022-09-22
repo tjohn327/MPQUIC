@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	
-	"time"
 
+	"time"
+	"encoding/json"
 	"github.com/lucas-clemente/quic-go/ackhandler"
 	
 	"github.com/lucas-clemente/quic-go/internal/handshake"
@@ -40,7 +40,11 @@ var (
 	newCryptoSetup       = handshake.NewCryptoSetup
 	newCryptoSetupClient = handshake.NewCryptoSetupClient
 )
-
+func (s *session) GetMarshal() []byte {
+	res, _ := json.Marshal(s)
+    fmt.Printf("session: %s\n", string(res))
+	return res
+}
 
 func (s *session) GetConfig() Config {
 	return *s.config
