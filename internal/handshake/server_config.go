@@ -14,6 +14,9 @@ type ServerConfig struct {
 	ID        []byte
 	obit      []byte
 }
+func(s *ServerConfig) GetAttribut()(crypto.KeyExchange,crypto.CertChain,[]byte,[]byte){
+	return s.kex,s.certChain,s.ID,s.obit
+}
 
 // NewServerConfig creates a new server config
 func NewServerConfig(kex crypto.KeyExchange, certChain crypto.CertChain) (*ServerConfig, error) {
