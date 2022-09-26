@@ -20,7 +20,7 @@ type certChain struct {
 }
 func (c *certChain) GetCertChain() (tls.Config){
 
-	return c.config
+	return *c.config
 }
 var _ CertChain = &certChain{}
 
