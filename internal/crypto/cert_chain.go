@@ -11,13 +11,17 @@ type CertChain interface {
 	SignServerProof(sni string, chlo []byte, serverConfigData []byte) ([]byte, error)
 	GetCertsCompressed(sni string, commonSetHashes, cachedHashes []byte) ([]byte, error)
 	GetLeafCert(sni string) ([]byte, error)
+	GetCertChain() (tls.Config)
 }
 
 // proofSource stores a key and a certificate for the server proof
 type certChain struct {
 	config *tls.Config
 }
+func (c *certChain) GetCertChain() (tls.Config){
 
+	return c.config
+}
 var _ CertChain = &certChain{}
 
 var errNoMatchingCertificate = errors.New("no matching certificate found")
