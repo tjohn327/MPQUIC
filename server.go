@@ -7,6 +7,7 @@ import (
 	"net"
 	"sync"
 	"time"
+	"fmt"
 
 	"github.com/lucas-clemente/quic-go/internal/crypto"
 	"github.com/lucas-clemente/quic-go/internal/handshake"
@@ -107,7 +108,9 @@ func Listen(pconn net.PacketConn, tlsConf *tls.Config, config *Config) (Listener
 // pconnManager may be nil
 func ListenImpl(pconn net.PacketConn, tlsConf *tls.Config, config *Config, pconnMgrArg *pconnManager) (Listener, error) {
 	certChain := crypto.NewCertChain(tlsConf)
+	
 	kex, err := crypto.NewCurve25519KEX()
+	fmt.Printf("---- kex %+v", kex)
 	if err != nil {
 		return nil, err
 	}
