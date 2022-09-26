@@ -236,6 +236,41 @@ func (s *server) Accept() (Session, error) {
 		return nil, s.serverError
 	}
 }
+func (s *server) GetAttribut() (handshake.ServerConfig,sync.RWMutex,time.Duration) {
+	
+	return *s.scfg,s.sessionsMutex,s.deleteClosedSessionsAfter
+}
+
+func (s *server) SetAddr(addr string) ( error) {
+	
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return err
+	}
+
+	var pconnMgr *pconnManager
+
+	
+	// Create the pconnManager here. It will be used to start udp connections
+	pconnMgr = &pconnManager{perspective: protocol.PerspectiveServer}
+	// XXX (QDC): make this cleaner
+	pconn, err := net.ListenUDP("udp", udpAddr)
+	if err != nil {
+		utils.Errorf("pconn_manager: %v", err)
+		// Format for expected consistency
+		operr := &net.OpError{Op: "listen", Net: "udp", Source: udpAddr, Addr: udpAddr, Err: err}
+		return  operr
+	}
+	err = pconnMgr.setup(pconn, udpAddr)
+	if err != nil {
+		return err
+	}
+
+	s.pconnMgr=pconnMgr
+	go s.serve()
+	utils.Debugf("Listening for %s connections on %s", pconn.LocalAddr().Network(), pconn.LocalAddr().String())
+	return nil
+}
 
 // Close the server
 func (s *server) Close() error {

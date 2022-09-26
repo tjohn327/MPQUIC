@@ -49,6 +49,7 @@ func (s *session) GetMarshal() []byte {
 }
 
 func (s *session) GetConfig() Config {
+	//fmt.Printf(" \n --conf fd: %s\n", s.config.GetFd())
 	return *s.config
 }
 func (s *session) GetPaths() map[protocol.PathID]*path {

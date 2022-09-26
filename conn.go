@@ -3,6 +3,7 @@ package quic
 import (
 	"net"
 	"sync"
+	
 )
 
 type connection interface {
@@ -12,6 +13,7 @@ type connection interface {
 	LocalAddr() net.Addr
 	RemoteAddr() net.Addr
 	SetCurrentRemoteAddr(net.Addr)
+	GetPconn() net.PacketConn
 }
 
 type conn struct {
@@ -22,6 +24,11 @@ type conn struct {
 }
 
 var _ connection = &conn{}
+
+func (c *conn) GetPconn() net.PacketConn {
+	//fmt.Printf(" \n --conf fd: %+v\n", c.pconn.GetFd())
+	return c.pconn
+}
 
 func (c *conn) Write(p []byte) error {
 	_, err := c.pconn.WriteTo(p, c.currentAddr)

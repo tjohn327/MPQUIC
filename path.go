@@ -52,6 +52,7 @@ type path struct {
 
 //add getters
 func (p *path) GetConn() connection{
+	
 	return p.conn
 }
 

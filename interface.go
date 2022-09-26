@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"time"
+	"sync"
 	
 
 	
@@ -142,4 +143,6 @@ type Listener interface {
 	Addr() net.Addr
 	// Accept returns new sessions. It should be called in a loop.
 	Accept() (Session, error)
+
+	GetAttribut() (handshake.ServerConfig,sync.RWMutex,time.Duration)
 }
