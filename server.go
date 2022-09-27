@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 	"fmt"
+	
 
 	"github.com/lucas-clemente/quic-go/internal/crypto"
 	"github.com/lucas-clemente/quic-go/internal/handshake"
@@ -52,7 +53,7 @@ var _ Listener = &server{}
 // ListenAddr creates a QUIC server listening on a given address.
 // The listener is not active until Serve() is called.
 // The tls.Config must not be nil, the quic.Config may be nil.
-func ListenAddr(addr string, tlsConf *tls.Config, config *Config) (Listener, error) {
+func ListenAddr(addr string, tlsConf *tls.Config, config *Config) (Listener,crypto.KeyExchange, error) {
 	return ListenAddrImpl(addr, tlsConf, config, nil)
 }
 
@@ -60,10 +61,10 @@ func ListenAddr(addr string, tlsConf *tls.Config, config *Config) (Listener, err
 // The listener is not active until Serve() is called.
 // The tls.Config must not be nil, the quic.Config may be nil.
 // The pconnManager may be nil
-func ListenAddrImpl(addr string, tlsConf *tls.Config, config *Config, pconnMgrArg *pconnManager) (Listener, error) {
+func ListenAddrImpl(addr string, tlsConf *tls.Config, config *Config, pconnMgrArg *pconnManager) (Listener,crypto.KeyExchange, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
-		return nil, err
+		return nil,nil, err
 	}
 
 	var pconnMgr *pconnManager
@@ -77,11 +78,11 @@ func ListenAddrImpl(addr string, tlsConf *tls.Config, config *Config, pconnMgrAr
 			utils.Errorf("pconn_manager: %v", err)
 			// Format for expected consistency
 			operr := &net.OpError{Op: "listen", Net: "udp", Source: udpAddr, Addr: udpAddr, Err: err}
-			return nil, operr
+			return nil,nil, err
 		}
 		err = pconnMgr.setup(pconn, udpAddr)
 		if err != nil {
-			return nil, err
+			return nil,nil, err
 		}
 	} else {
 		pconnMgr = pconnMgrArg
@@ -92,12 +93,12 @@ func ListenAddrImpl(addr string, tlsConf *tls.Config, config *Config, pconnMgrAr
 // Listen listens for QUIC connections on a given net.PacketConn.
 // The listener is not active until Serve() is called.
 // The tls.Config must not be nil, the quic.Config may be nil.
-func Listen(pconn net.PacketConn, tlsConf *tls.Config, config *Config) (Listener, error) {
+func Listen(pconn net.PacketConn, tlsConf *tls.Config, config *Config) (Listener,crypto.KeyExchange, error) {
 	// Create the pconnManager here. It will be used to start udp connections
 	pconnMgr := &pconnManager{perspective: protocol.PerspectiveServer}
 	err := pconnMgr.setup(pconn, nil)
 	if err != nil {
-		return nil, err
+		return nil,nil, err
 	}
 	return ListenImpl(pconn, tlsConf, config, pconnMgr)
 }
@@ -106,17 +107,17 @@ func Listen(pconn net.PacketConn, tlsConf *tls.Config, config *Config) (Listener
 // The listener is not active until Serve() is called.
 // The tls.Config must not be nil, the quic.Config may be nil.
 // pconnManager may be nil
-func ListenImpl(pconn net.PacketConn, tlsConf *tls.Config, config *Config, pconnMgrArg *pconnManager) (Listener, error) {
+func ListenImpl(pconn net.PacketConn, tlsConf *tls.Config, config *Config, pconnMgrArg *pconnManager) (Listener,crypto.KeyExchange, error) {
 	certChain := crypto.NewCertChain(tlsConf)
 	
 	kex, err := crypto.NewCurve25519KEX()
 	fmt.Printf("---- kex %+v", kex)
 	if err != nil {
-		return nil, err
+		return nil,nil, err
 	}
 	scfg, err := handshake.NewServerConfig(kex, certChain)
 	if err != nil {
-		return nil, err
+		return nil,nil, err
 	}
 
 	var pconnMgr *pconnManager
@@ -125,7 +126,7 @@ func ListenImpl(pconn net.PacketConn, tlsConf *tls.Config, config *Config, pconn
 		pconnMgr = &pconnManager{perspective: protocol.PerspectiveServer}
 		err := pconnMgr.setup(pconn, nil)
 		if err != nil {
-			return nil, err
+			return nil,nil, err
 		}
 	} else {
 		pconnMgr = pconnMgrArg
@@ -145,7 +146,7 @@ func ListenImpl(pconn net.PacketConn, tlsConf *tls.Config, config *Config, pconn
 	}
 	go s.serve()
 	utils.Debugf("Listening for %s connections on %s", pconn.LocalAddr().Network(), pconn.LocalAddr().String())
-	return s, nil
+	return s,kex, nil
 }
 
 var defaultAcceptCookie = func(clientAddr net.Addr, cookie *Cookie) bool {
