@@ -111,7 +111,7 @@ func ListenImpl(pconn net.PacketConn, tlsConf *tls.Config, config *Config, pconn
 	certChain := crypto.NewCertChain(tlsConf)
 	
 	kex, err := crypto.NewCurve25519KEX()
-	fmt.Printf("---- kex %+v", kex)
+	//fmt.Printf("---- kex %+v", kex)
 	if err != nil {
 		return nil,nil, err
 	}
