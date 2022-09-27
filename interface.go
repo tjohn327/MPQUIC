@@ -145,4 +145,6 @@ type Listener interface {
 	Accept() (Session, error)
 
 	GetAttribut() (handshake.ServerConfig,crypto.CertChain,sync.RWMutex,time.Duration)
+
+	initializeMyscfg() (handshake.MyScfg)
 }
