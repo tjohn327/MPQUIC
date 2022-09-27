@@ -146,5 +146,5 @@ type Listener interface {
 
 	GetAttribut() (handshake.ServerConfig,crypto.CertChain,sync.RWMutex,time.Duration)
 
-	initializeMyscfg() (handshake.MyScfg)
+	InitializeMyscfg() (handshake.MyScfg)
 }

@@ -244,7 +244,7 @@ func (s *server) GetAttribut() (handshake.ServerConfig,crypto.CertChain,sync.RWM
 	
 	return *s.scfg,s.certChain, s.sessionsMutex,s.deleteClosedSessionsAfter
 }
-func (s *server) initializeMyscfg() (handshake.MyScfg){
+func (s *server) InitializeMyscfg() (handshake.MyScfg){
 	return handshake.MyScfg{}
 }
 
