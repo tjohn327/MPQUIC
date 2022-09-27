@@ -8,7 +8,7 @@ import (
 	"sync"
 	
 
-	
+	"github.com/lucas-clemente/quic-go/internal/crypto"
 	"github.com/lucas-clemente/quic-go/internal/handshake"
 	"github.com/lucas-clemente/quic-go/internal/protocol"
 	
@@ -144,5 +144,5 @@ type Listener interface {
 	// Accept returns new sessions. It should be called in a loop.
 	Accept() (Session, error)
 
-	GetAttribut() (handshake.ServerConfig,sync.RWMutex,time.Duration)
+	GetAttribut() (handshake.ServerConfig,crypto.CertChain,sync.RWMutex,time.Duration)
 }

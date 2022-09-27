@@ -7,7 +7,7 @@ import (
 	"net"
 	"sync"
 	"time"
-	"fmt"
+	
 	
 
 	"github.com/lucas-clemente/quic-go/internal/crypto"
@@ -240,9 +240,9 @@ func (s *server) Accept() (Session, error) {
 		return nil, s.serverError
 	}
 }
-func (s *server) GetAttribut() (handshake.ServerConfig,sync.RWMutex,time.Duration) {
+func (s *server) GetAttribut() (handshake.ServerConfig,crypto.CertChain,sync.RWMutex,time.Duration) {
 	
-	return *s.scfg,s.sessionsMutex,s.deleteClosedSessionsAfter
+	return *s.scfg,s.certChain, s.sessionsMutex,s.deleteClosedSessionsAfter
 }
 
 func (s *server) SetAddr(addr string) ( error) {
