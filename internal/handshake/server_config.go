@@ -3,6 +3,7 @@ package handshake
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/tls"
 
 	"github.com/lucas-clemente/quic-go/internal/crypto"
 )
@@ -14,8 +15,21 @@ type ServerConfig struct {
 	ID        []byte
 	obit      []byte
 }
-func(s *ServerConfig) GetAttribut()(crypto.KeyExchange,crypto.CertChain,[]byte,[]byte){
-	return s.kex,s.certChain,s.ID,s.obit
+type MyScfg struct{
+	Kex       crypto.KeyExchange
+
+	ID        []byte
+	Obit      []byte
+	Config 	  tls.Config
+}
+func(s *ServerConfig) GetAttribut()(MyScfg){
+	a:=s.certChain.GetCertChain()
+	return MyScfg{
+		Kex:		s.kex,
+		ID:			s.ID,
+		Obit:		s.obit,
+		Config:		a,
+	}
 }
 
 // NewServerConfig creates a new server config
