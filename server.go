@@ -77,7 +77,8 @@ func ListenAddrImpl(addr string, tlsConf *tls.Config, config *Config, pconnMgrAr
 		if err != nil {
 			utils.Errorf("pconn_manager: %v", err)
 			// Format for expected consistency
-			operr := &net.OpError{Op: "listen", Net: "udp", Source: udpAddr, Addr: udpAddr, Err: err}
+			operr := &net.OpError{Op: "listen", Net: "udp", Source: udpAddr, Addr: udpAddr, Err: err
+		}
 			return nil,nil, err
 		}
 		err = pconnMgr.setup(pconn, udpAddr)
