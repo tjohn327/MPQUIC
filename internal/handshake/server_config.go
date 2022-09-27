@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/tls"
-
-	"github.com/lucas-clemente/quic-go/internal/crypto"
+	c "crypto"
+	crypto "github.com/lucas-clemente/quic-go/internal/crypto"
 )
 
 // ServerConfig is a server config
@@ -21,16 +21,16 @@ type MyScfg struct{
 	ID        []byte
 	Obit      []byte
 	Config 	  tls.Config
-	PrivateKey: crypto.PrivateKey
+	PrivateKey c.PrivateKey
 }
 func(s *ServerConfig) GetAttribut()(MyScfg){
 	a:=s.certChain.GetCertChain()
 	return MyScfg{
-		Kex:		*s.kex,
+		Kex:		s.kex,
 		ID:			s.ID,
 		Obit:		s.obit,
 		Config:		a,
-		PrivateKey: a.Certificate[0].PrivateKey,
+		PrivateKey: a.Certificates[0].PrivateKey,
 	}
 }
 
