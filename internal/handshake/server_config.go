@@ -13,7 +13,7 @@ import (
 
 // ServerConfig is a server config
 type ServerConfig struct {
-	kex       crypto.KeyExc hange
+	kex       crypto.KeyExchange
 	certChain crypto.CertChain
 	ID        []byte
 	obit      []byte
