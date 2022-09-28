@@ -23,11 +23,11 @@ type MyScfg struct{
 	Public    [32]byte
 	ID        []byte
 	Obit      []byte
-	Config 	  tls.Config
+	//Config 	  tls.Config
 	//PrivateKey c.PrivateKey
 }
 func(s *ServerConfig) GetAttribut()(MyScfg){
-	a:=s.certChain.GetCertChain()
+	//a:=s.certChain.GetCertChain()
 	return MyScfg{
 		Secret:		s.kex.SecretKey(),
 		Public:		s.kex.Publicckey(),
