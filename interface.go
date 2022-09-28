@@ -147,4 +147,5 @@ type Listener interface {
 	GetAttribut() (handshake.ServerConfig,crypto.CertChain,sync.RWMutex,time.Duration)
 
 	InitializeMyscfg() (handshake.MyScfg)
+	SetAddr(addr string) error
 }
