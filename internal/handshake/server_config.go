@@ -13,7 +13,7 @@ import (
 
 // ServerConfig is a server config
 type ServerConfig struct {
-	kex       crypto.KeyExchange
+	kex       crypto.KeyExc hange
 	certChain crypto.CertChain
 	ID        []byte
 	obit      []byte
@@ -23,16 +23,16 @@ type MyScfg struct{
 
 	ID        []byte
 	Obit      []byte
-	Config 	  tls.Config
+	//Config 	  tls.Config
 	PrivateKey c.PrivateKey
 }
 func(s *ServerConfig) GetAttribut()(MyScfg){
-	a:=s.certChain.GetCertChain()
+	//a:=s.certChain.GetCertChain()
 	return MyScfg{
 		Kex:		s.kex,
 		ID:			s.ID,
 		Obit:		s.obit,
-		Config:		a,
+		//Config:		a,
 		PrivateKey: a.Certificates[0].PrivateKey,
 	}
 }
