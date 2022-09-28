@@ -261,6 +261,7 @@ func (s *server) SetAddr(addr string) ( error) {
 	// Create the pconnManager here. It will be used to start udp connections
 	pconnMgr = &pconnManager{perspective: protocol.PerspectiveServer}
 	// XXX (QDC): make this cleaner
+	ftm.Println(" 1")
 	pconn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
 		utils.Errorf("pconn_manager: %v", err)
@@ -268,13 +269,16 @@ func (s *server) SetAddr(addr string) ( error) {
 		operr := &net.OpError{Op: "listen", Net: "udp", Source: udpAddr, Addr: udpAddr, Err: err}
 		return  operr
 	}
+	ftm.Println(" 2")
 	err = pconnMgr.setup(pconn, udpAddr)
+	ftm.Println("3")
 	if err != nil {
 		return err
 	}
 
 	s.pconnMgr=pconnMgr
 	go s.serve()
+	ftm.Println(" 4")
 	utils.Debugf("Listening for %s connections on %s", pconn.LocalAddr().Network(), pconn.LocalAddr().String())
 	return nil
 }
