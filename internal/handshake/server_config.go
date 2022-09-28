@@ -3,7 +3,7 @@ package handshake
 import (
 	"bytes"
 	"crypto/rand"
-	//"crypto/tls"
+	"crypto/tls"
 	//c "crypto"
 	"encoding/base64"
     "encoding/gob"
@@ -19,21 +19,21 @@ type ServerConfig struct {
 	obit      []byte
 }
 type MyScfg struct{
-	Secret        [32]byte
-	Public      [32]byte
+	Secret    [32]byte
+	Public    [32]byte
 	ID        []byte
 	Obit      []byte
-	//Config 	  tls.Config
+	Config 	  tls.Config
 	//PrivateKey c.PrivateKey
 }
 func(s *ServerConfig) GetAttribut()(MyScfg){
-	//a:=s.certChain.GetCertChain()
+	a:=s.certChain.GetCertChain()
 	return MyScfg{
 		Secret:		s.kex.SecretKey(),
 		Public:		s.kex.Publicckey(),
 		ID:			s.ID,
 		Obit:		s.obit,  
-		//Config:		a,
+		Config:		a,
 		//PrivateKey: a.Certificates[0].PrivateKey,
 	}
 }
