@@ -32,7 +32,7 @@ func(s *ServerConfig) GetAttribut()(MyScfg){
 		Secret:		s.kex.SecretKey(),
 		Public:		s.kex.Publicckey(),
 		ID:			s.ID,
-		Obit:		s.obit,
+		Obit:		s.obit,  
 		//Config:		a,
 		//PrivateKey: a.Certificates[0].PrivateKey,
 	}
