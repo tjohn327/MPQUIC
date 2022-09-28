@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	//"crypto/tls"
-	c "crypto"
+	//c "crypto"
 	"encoding/base64"
     "encoding/gob"
    	"fmt"
