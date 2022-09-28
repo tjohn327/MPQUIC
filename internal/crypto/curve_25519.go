@@ -15,6 +15,15 @@ type curve25519KEX struct {
 
 var _ KeyExchange = &curve25519KEX{}
 
+func SetKeyExchange(s [32]byte,p [32]byte) (KeyExchange){
+	
+	return &curve25519KEX{
+		secret:       s,
+		public: 	p,
+		
+	}
+}
+
 // NewCurve25519KEX creates a new KeyExchange using Curve25519, see https://cr.yp.to/ecdh.html
 func NewCurve25519KEX() (KeyExchange, error) {
 	c := &curve25519KEX{}
@@ -29,6 +38,13 @@ func NewCurve25519KEX() (KeyExchange, error) {
 	return c, nil
 }
 
+func (c *curve25519KEX) SecretKey() [32]byte {
+	return c.secret
+}
+
+func (c *curve25519KEX) Publicckey() [32]byte {
+	return c.public
+}
 func (c *curve25519KEX) PublicKey() []byte {
 	return c.public[:]
 }

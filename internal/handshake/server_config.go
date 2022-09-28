@@ -19,8 +19,8 @@ type ServerConfig struct {
 	obit      []byte
 }
 type MyScfg struct{
-	Kex       crypto.KeyExchange
-
+	Secret        [32]byte
+	Public      [32]byte
 	ID        []byte
 	Obit      []byte
 	//Config 	  tls.Config
@@ -29,7 +29,8 @@ type MyScfg struct{
 func(s *ServerConfig) GetAttribut()(MyScfg){
 	//a:=s.certChain.GetCertChain()
 	return MyScfg{
-		Kex:		s.kex,
+		Secret:		s.kex.SecretKey(),
+		Public:		s.kex.Publicckey(),
 		ID:			s.ID,
 		Obit:		s.obit,
 		//Config:		a,
