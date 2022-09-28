@@ -145,6 +145,14 @@ type session struct {
 
 var _ Session = &session{}
 
+func (s *session) SetIPAddress(addr string) {
+	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
+	s.paths[0].conn.SetCurrentRemoteAddr(udpAddr)
+	
+	
+}
+
+
 // newSession makes a new session
 func newSession(
 	conn connection,

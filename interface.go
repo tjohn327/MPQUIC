@@ -88,6 +88,9 @@ type Session interface {
 	GetConfig() Config
 	GetPaths() map[protocol.PathID]*path
 	GetMarshal() []byte
+
+	//Set IP Address
+	SetIPAddress(string)
 }
 
 // A NonFWSession is a QUIC connection between two peers half-way through the handshake.
