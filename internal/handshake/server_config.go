@@ -3,7 +3,7 @@ package handshake
 import (
 	"bytes"
 	"crypto/rand"
-	"crypto/tls"
+	//"crypto/tls"
 	c "crypto"
 	"encoding/base64"
     "encoding/gob"
@@ -33,7 +33,7 @@ func(s *ServerConfig) GetAttribut()(MyScfg){
 		ID:			s.ID,
 		Obit:		s.obit,
 		//Config:		a,
-		PrivateKey: a.Certificates[0].PrivateKey,
+		//PrivateKey: a.Certificates[0].PrivateKey,
 	}
 }
 func (s *ServerConfig) ToGOB64(m MyScfg) string {
