@@ -24,7 +24,7 @@ type MyScfg struct{
 	ID        []byte
 	Obit      []byte
 	//Config 	  tls.Config
-	PrivateKey c.PrivateKey
+	//PrivateKey c.PrivateKey
 }
 func(s *ServerConfig) GetAttribut()(MyScfg){
 	//a:=s.certChain.GetCertChain()
