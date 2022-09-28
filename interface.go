@@ -91,6 +91,8 @@ type Session interface {
 
 	//Set IP Address
 	SetIPAddress(string)
+
+	GetIdConn() protocol.ConnectionID
 }
 
 // A NonFWSession is a QUIC connection between two peers half-way through the handshake.

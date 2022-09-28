@@ -49,6 +49,8 @@ func (c *conn) LocalAddr() net.Addr {
 	return c.pconn.LocalAddr()
 }
 
+
+
 func (c *conn) RemoteAddr() net.Addr {
 	c.mutex.RLock()
 	addr := c.currentAddr
