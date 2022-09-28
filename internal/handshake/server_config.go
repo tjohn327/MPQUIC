@@ -37,7 +37,7 @@ func(s *ServerConfig) GetAttribut()(MyScfg){
 		//PrivateKey: a.Certificates[0].PrivateKey,
 	}
 }
-func  ToGOB64(m MyScfg) string {
+func (s *ServerConfig) ToGOB64(m MyScfg) string {
     b := bytes.Buffer{}
     e := gob.NewEncoder(&b)
     err := e.Encode(m)
@@ -46,7 +46,7 @@ func  ToGOB64(m MyScfg) string {
 }
 
 // go binary decoder
-func FromGOB64(str string) MyScfg {
+func (s *ServerConfig) FromGOB64(str string) MyScfg {
     m := MyScfg{}
     by, err := base64.StdEncoding.DecodeString(str)
     if err != nil { fmt.Println(`failed base64 Decode`, err); }
