@@ -150,6 +150,10 @@ func (s *session) SetIPAddress(addr string) {
 	s.paths[0].conn.SetCurrentRemoteAddr(udpAddr)
 	
 }
+func (s *session) Setuint64toIdC(idc uint64) protocol.ConnectionID {
+	return protocol.ConnectionID(idc)
+	
+}
 func (s *session) GetIdConn() protocol.ConnectionID  {
 	return s.connectionID
 }
