@@ -90,7 +90,7 @@ type Session interface {
 	GetMarshal() []byte
 
 	//Set IP Address
-	SetIPAddress(net.Addr)
+	SetIPAddress(string)
 
 	GetIdConn() protocol.ConnectionID
 	SetIdConn(protocol.ConnectionID)
