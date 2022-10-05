@@ -8,7 +8,10 @@ import (
 	"net"
 	"sync"
 	"time"
+	"bytes"
 	"encoding/json"
+	"encoding/base64"
+    "encoding/gob"
 	"github.com/lucas-clemente/quic-go/ackhandler"
 	
 	"github.com/lucas-clemente/quic-go/internal/handshake"
@@ -67,7 +70,10 @@ type closeError struct {
 	err    error
 	remote bool
 }
-
+type MyStruct struct {
+	IdConnection protocol.ConnectionID
+	IpAddress net.Addr
+}
 // A Session is a QUIC session
 type session struct {
 	connectionID protocol.ConnectionID
@@ -150,9 +156,12 @@ func (s *session) SetIPAddress(addr string) {
 	s.paths[0].conn.SetCurrentRemoteAddr(udpAddr)
 	
 }
-func (s *session) Setuint64toIdC(idc uint64) protocol.ConnectionID {
-	return protocol.ConnectionID(idc)
+func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) MyStruct {
+	return MyStruct{
+		IdConnection :idc,		
+		IpAddress	:ipaddr,
 	
+}
 }
 func (s *session) GetIdConn() protocol.ConnectionID  {
 	return s.connectionID
@@ -161,7 +170,26 @@ func (s *session) SetIdConn(id protocol.ConnectionID)  {
 	s.connectionID=id
 }
 
+func (s *session) ToGOB64(m MyStruct) string {
+    b := bytes.Buffer{}
+    e := gob.NewEncoder(&b)
+    err := e.Encode(m)
+    if err != nil { fmt.Println(`failed gob Encode`, err) }
+    return base64.StdEncoding.EncodeToString(b.Bytes())
+}
 
+// go binary decoder
+func  (s *session) FromGOB64(str string) MyStruct {
+    m := MyStruct{}
+    by, err := base64.StdEncoding.DecodeString(str)
+    if err != nil { fmt.Println(`failed base64 Decode`, err); }
+    b := bytes.Buffer{}
+    b.Write(by)
+    d := gob.NewDecoder(&b)
+    err = d.Decode(&m)
+    if err != nil { fmt.Println(`failed gob Decode`, err); }
+    return m
+}
 // newSession makes a new session
 func newSession(
 	conn connection,

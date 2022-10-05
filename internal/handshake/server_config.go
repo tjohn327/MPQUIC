@@ -5,9 +5,6 @@ import (
 	"crypto/rand"
 	//"crypto/tls"
 	//c "crypto"
-	"encoding/base64"
-    "encoding/gob"
-   	"fmt"
 	crypto "github.com/lucas-clemente/quic-go/internal/crypto"
 )
 
@@ -37,26 +34,7 @@ func(s *ServerConfig) GetAttribut()(MyScfg){
 		//PrivateKey: a.Certificates[0].PrivateKey,
 	}
 }
-func (s *ServerConfig) ToGOB64(m MyScfg) string {
-    b := bytes.Buffer{}
-    e := gob.NewEncoder(&b)
-    err := e.Encode(m)
-    if err != nil { fmt.Println(`failed gob Encode`, err) }
-    return base64.StdEncoding.EncodeToString(b.Bytes())
-}
 
-// go binary decoder
-func  (s *ServerConfig) FromGOB64(str string) MyScfg {
-    m := MyScfg{}
-    by, err := base64.StdEncoding.DecodeString(str)
-    if err != nil { fmt.Println(`failed base64 Decode`, err); }
-    b := bytes.Buffer{}
-    b.Write(by)
-    d := gob.NewDecoder(&b)
-    err = d.Decode(&m)
-    if err != nil { fmt.Println(`failed gob Decode`, err); }
-    return m
-}
 
 // NewServerConfig creates a new server config
 func NewServerConfig(kex crypto.KeyExchange, certChain crypto.CertChain) (*ServerConfig, error) {
