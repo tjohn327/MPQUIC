@@ -19,7 +19,7 @@ const (
 	// LogLevelError enables err logs
 	LogLevelError=LogLevelNothing
 	// LogLevelInfo enables info logs (e.g. packets)
-	LogLevelInfo
+	LogLevelInfo=LogLevelNothing
 	// LogLevelDebug enables debug logs (e.g. packet contents)
 	LogLevelDebug=LogLevelNothing
 )
