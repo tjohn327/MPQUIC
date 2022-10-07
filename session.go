@@ -878,6 +878,10 @@ func (s *session) sendPing(pth *path) error {
 	}
 	return s.sendPackedPacket(packet, pth)
 }
+func (s *session) SendPing(pth *path) error {
+	
+	return s.sendPing(pth)
+}
 
 func (s *session) logPacket(packet *packedPacket, pathID protocol.PathID) {
 	if !utils.Debug() {

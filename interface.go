@@ -97,6 +97,7 @@ type Session interface {
 	InitializeMyStrut(protocol.ConnectionID,net.Addr) MyStruct
 	ToGOB64(MyStruct) string	
 	FromGOB64(string) MyStruct
+	SendPing(*path)
 }
 
 // A NonFWSession is a QUIC connection between two peers half-way through the handshake.
