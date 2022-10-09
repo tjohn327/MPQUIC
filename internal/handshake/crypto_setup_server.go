@@ -54,6 +54,33 @@ type cryptoSetupServer struct {
 
 var _ CryptoSetup = &cryptoSetupServer{}
 
+
+func (h *cryptoSetupServer) GetCrypto()(CookieGenerator,
+	chan<- protocol.EncryptionLevel,
+	QuicCryptoKeyDerivationFunction,
+	KeyExchangeFunction,
+	crypto.AEAD,
+	crypto.AEAD,
+	crypto.AEAD){
+	return *h.stkGenerator,h.aeadChanged,h.keyDerivation,h.keyExchange,h.nullAEAD,h.secureAEAD,h.forwardSecureAEAD
+}
+
+func (h *cryptoSetupServer) SetCrypto(stkGenerator CookieGenerator,
+	aeadChanged chan<- protocol.EncryptionLevel,
+	keyDerivation QuicCryptoKeyDerivationFunction,
+	keyExchange KeyExchangeFunction,
+	nullAEAD crypto.AEAD,
+	secureAEAD crypto.AEAD,
+	forwardSecureAEAD crypto.AEAD){
+	
+	h.stkGenerator=&stkGenerator
+	h.aeadChanged=aeadChanged
+	h.keyDerivation=keyDerivation
+	h.keyExchange=keyExchange
+	h.nullAEAD=nullAEAD
+	h.secureAEAD=secureAEAD
+	h.forwardSecureAEAD=forwardSecureAEAD
+}
 // ErrHOLExperiment is returned when the client sends the FHL2 tag in the CHLO.
 // This is an experiment implemented by Chrome in QUIC 36, which we don't support.
 // TODO: remove this when dropping support for QUIC 36
