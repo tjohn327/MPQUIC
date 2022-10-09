@@ -163,8 +163,8 @@ func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) M
 	
 }
 }
-func (s *session) GetIdConn() protocol.ConnectionID  {
-	return s.connectionID
+func (s *session) GetIdConnAndpacker() (protocol.ConnectionID,packetPacker)  {
+	return s.connectionID,*s.packer
 }
 func (s *session) SetIdConn(id protocol.ConnectionID)  {
 	s.connectionID=id
@@ -851,6 +851,7 @@ func (s *session) sendPackedPacket(packet *packedPacket, pth *path) error {
 	pth.sentPacket<-struct{}{}
 
 	s.logPacket(packet, pth.pathID)
+	
 	return pth.conn.Write(packet.raw)
 }
 
