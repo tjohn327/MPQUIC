@@ -62,7 +62,21 @@ type cryptoSetupClient struct {
 	connectionParameters ConnectionParametersManager
 }
 
+
 var _ CryptoSetup = &cryptoSetupClient{}
+
+func (h *cryptoSetupClient) GetCrypto()(CookieGenerator,
+	chan<- protocol.EncryptionLevel,
+	QuicCryptoKeyDerivationFunction,
+	KeyExchangeFunction,
+	crypto.AEAD,
+	crypto.AEAD,
+	crypto.AEAD){
+		a:=CookieGenerator{}
+	return a,h.aeadChanged,h.keyDerivation,h.keyExchange,h.nullAEAD,h.secureAEAD,h.forwardSecureAEAD
+}
+
+
 
 var (
 	errNoObitForClientNonce             = errors.New("CryptoSetup BUG: No OBIT for client nonce available")

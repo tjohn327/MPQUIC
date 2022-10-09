@@ -1,6 +1,9 @@
 package handshake
 
-import "github.com/lucas-clemente/quic-go/internal/protocol"
+import ("github.com/lucas-clemente/quic-go/internal/protocol"
+
+		"github.com/lucas-clemente/quic-go/internal/crypto"
+	)
 
 // Sealer seals a packet
 type Sealer interface {
@@ -19,6 +22,13 @@ type CryptoSetup interface {
 	GetSealer() (protocol.EncryptionLevel, Sealer)
 	GetSealerWithEncryptionLevel(protocol.EncryptionLevel) (Sealer, error)
 	GetSealerForCryptoStream() (protocol.EncryptionLevel, Sealer)
+	GetCrypto()(CookieGenerator,
+		chan<- protocol.EncryptionLevel,
+		QuicCryptoKeyDerivationFunction,
+		KeyExchangeFunction,
+		crypto.AEAD,
+		crypto.AEAD,
+		crypto.AEAD)
 }
 
 // TransportParameters are parameters sent to the peer during the handshake

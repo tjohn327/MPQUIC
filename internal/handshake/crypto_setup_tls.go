@@ -29,6 +29,19 @@ type cryptoSetupTLS struct {
 
 	aeadChanged chan<- protocol.EncryptionLevel
 }
+func (h *cryptoSetupTLS) GetCrypto()(CookieGenerator,
+	chan<- protocol.EncryptionLevel,
+	QuicCryptoKeyDerivationFunction,
+	KeyExchangeFunction,
+	crypto.AEAD,
+	crypto.AEAD,
+	crypto.AEAD){
+		a:=CookieGenerator{}
+		var b QuicCryptoKeyDerivationFunction
+		var c crypto.AEAD
+		var d KeyExchangeFunction
+	return a,h.aeadChanged,b,d,h.nullAEAD,c,c
+}
 
 // NewCryptoSetupTLS creates a new CryptoSetup instance for a server
 func NewCryptoSetupTLS(
