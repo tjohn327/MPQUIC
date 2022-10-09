@@ -92,7 +92,7 @@ type Session interface {
 	//Set IP Address
 	SetIPAddress(string)
 
-	GetIdConnAndpacker() (protocol.ConnectionID,packetPacker)
+	GetIdConnAndpacker() (protocol.ConnectionID,packetPacker,handshake.CryptoSetup)
 	SetIdConn(protocol.ConnectionID)
 	InitializeMyStrut(protocol.ConnectionID,net.Addr) MyStruct
 	ToGOB64(MyStruct) string	

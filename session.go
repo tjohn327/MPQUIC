@@ -163,8 +163,8 @@ func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) M
 	
 }
 }
-func (s *session) GetIdConnAndpacker() (protocol.ConnectionID,packetPacker)  {
-	return s.connectionID,*s.packer
+func (s *session) GetIdConnAndpacker() (protocol.ConnectionID,packetPacker,handshake.CryptoSetup)  {
+	return s.connectionID,*s.packer,s.cryptoSetup
 }
 func (s *session) SetIdConn(id protocol.ConnectionID)  {
 	s.connectionID=id
