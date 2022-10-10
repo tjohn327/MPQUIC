@@ -29,6 +29,7 @@ type CryptoSetup interface {
 		crypto.AEAD,
 		crypto.AEAD,
 		crypto.AEAD)
+	SetCrypto(protocol.ConnectionID)
 }
 
 // TransportParameters are parameters sent to the peer during the handshake

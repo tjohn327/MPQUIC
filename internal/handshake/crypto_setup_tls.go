@@ -42,6 +42,11 @@ func (h *cryptoSetupTLS) GetCrypto()(CookieGenerator,
 		var d KeyExchangeFunction
 	return a,h.aeadChanged,b,d,h.nullAEAD,c,c
 }
+func (h *cryptoSetupTLS) SetCrypto(ConnID   protocol.ConnectionID){
+	
+	
+	
+}
 
 // NewCryptoSetupTLS creates a new CryptoSetup instance for a server
 func NewCryptoSetupTLS(

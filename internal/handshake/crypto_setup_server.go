@@ -51,6 +51,12 @@ type cryptoSetupServer struct {
 
 	mutex sync.RWMutex
 }
+type CryptoSend struct{
+	ConnID               protocol.ConnectionID
+	KeyExchange crypto.KeyExchange
+
+
+}
 
 var _ CryptoSetup = &cryptoSetupServer{}
 
@@ -65,21 +71,10 @@ func (h *cryptoSetupServer) GetCrypto()(CookieGenerator,
 	return *h.stkGenerator,h.aeadChanged,h.keyDerivation,h.keyExchange,h.nullAEAD,h.secureAEAD,h.forwardSecureAEAD
 }
 
-func (h *cryptoSetupServer) SetCrypto(stkGenerator CookieGenerator,
-	aeadChanged chan<- protocol.EncryptionLevel,
-	keyDerivation QuicCryptoKeyDerivationFunction,
-	keyExchange KeyExchangeFunction,
-	nullAEAD crypto.AEAD,
-	secureAEAD crypto.AEAD,
-	forwardSecureAEAD crypto.AEAD){
+func (h *cryptoSetupServer) SetCrypto(ConnID   protocol.ConnectionID){
 	
-	h.stkGenerator=&stkGenerator
-	h.aeadChanged=aeadChanged
-	h.keyDerivation=keyDerivation
-	h.keyExchange=keyExchange
-	h.nullAEAD=nullAEAD
-	h.secureAEAD=secureAEAD
-	h.forwardSecureAEAD=forwardSecureAEAD
+	h.connID=ConnID
+	
 }
 // ErrHOLExperiment is returned when the client sends the FHL2 tag in the CHLO.
 // This is an experiment implemented by Chrome in QUIC 36, which we don't support.

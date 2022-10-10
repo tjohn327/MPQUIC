@@ -31,6 +31,11 @@ type packetPacker struct {
 	stopWaiting   map[protocol.PathID]*wire.StopWaitingFrame
 	ackFrame      map[protocol.PathID]*wire.AckFrame
 }
+func (p *packetPacker) SetCrypto(ConnID   protocol.ConnectionID){
+	
+	p.connectionID=ConnID
+	
+}
 
 func newPacketPacker(connectionID protocol.ConnectionID,
 	cryptoSetup handshake.CryptoSetup,

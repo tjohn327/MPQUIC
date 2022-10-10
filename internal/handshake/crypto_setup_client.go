@@ -75,6 +75,12 @@ func (h *cryptoSetupClient) GetCrypto()(CookieGenerator,
 		a:=CookieGenerator{}
 	return a,h.aeadChanged,h.keyDerivation,h.keyExchange,h.nullAEAD,h.secureAEAD,h.forwardSecureAEAD
 }
+func (h *cryptoSetupClient) SetCrypto(ConnID   protocol.ConnectionID){
+	
+	
+	
+}
+
 
 
 
