@@ -34,6 +34,7 @@ type packetPacker struct {
 func (p *packetPacker) SetCrypto(ConnID   protocol.ConnectionID){
 	
 	p.connectionID=ConnID
+	p.cryptoSetup.SetCrypto(ConnID)
 	
 }
 
