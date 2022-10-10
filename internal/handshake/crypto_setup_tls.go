@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"net"
 
 	"github.com/bifurcation/mint"
 	"github.com/lucas-clemente/quic-go/internal/crypto"
@@ -43,6 +44,11 @@ func (h *cryptoSetupTLS) GetCrypto()(CookieGenerator,
 	return a,h.aeadChanged,b,d,h.nullAEAD,c,c
 }
 func (h *cryptoSetupTLS) SetCrypto(ConnID   protocol.ConnectionID){
+	
+	
+	
+}
+func (p *cryptoSetupTLS) SetRemoteAddr(remoteAddr  net.Addr){
 	
 	
 	

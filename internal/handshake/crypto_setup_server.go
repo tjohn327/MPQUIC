@@ -60,7 +60,11 @@ type CryptoSend struct{
 
 var _ CryptoSetup = &cryptoSetupServer{}
 
-
+func (p *cryptoSetupServer) SetRemoteAddr(remoteAddr  net.Addr){
+	
+	p.remoteAddr=remoteAddr
+	
+}
 func (h *cryptoSetupServer) GetCrypto()(CookieGenerator,
 	chan<- protocol.EncryptionLevel,
 	QuicCryptoKeyDerivationFunction,

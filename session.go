@@ -154,6 +154,7 @@ var _ Session = &session{}
 func (s *session) SetIPAddress(addr string) {
 	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
 	s.paths[0].conn.SetCurrentRemoteAddr(udpAddr)
+	s.packer.SetRemoteAddr(udpAddr)
 	
 }
 func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) MyStruct {
@@ -168,6 +169,7 @@ func (s *session) GetIdConnAndpacker() (protocol.ConnectionID,packetPacker,hands
 }
 func (s *session) SetIdConn(id protocol.ConnectionID)  {
 	s.connectionID=id
+	s.packer.SetCrypto(id)
 }
 
 func (s *session) ToGOB64(m MyStruct) string {

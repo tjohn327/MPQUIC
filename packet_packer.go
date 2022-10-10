@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
+	"net"
+	
 	"github.com/lucas-clemente/quic-go/ackhandler"
 	"github.com/lucas-clemente/quic-go/internal/handshake"
 	"github.com/lucas-clemente/quic-go/internal/protocol"
@@ -35,6 +36,11 @@ func (p *packetPacker) SetCrypto(ConnID   protocol.ConnectionID){
 	
 	p.connectionID=ConnID
 	p.cryptoSetup.SetCrypto(ConnID)
+	
+}
+func (p *packetPacker) SetRemoteAddr(remoteAddr  net.Addr){
+	
+	p.cryptoSetup.SetRemoteAddr(remoteAddr)
 	
 }
 

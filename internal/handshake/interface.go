@@ -3,6 +3,7 @@ package handshake
 import ("github.com/lucas-clemente/quic-go/internal/protocol"
 
 		"github.com/lucas-clemente/quic-go/internal/crypto"
+		"net"
 	)
 
 // Sealer seals a packet
@@ -30,6 +31,9 @@ type CryptoSetup interface {
 		crypto.AEAD,
 		crypto.AEAD)
 	SetCrypto(protocol.ConnectionID)
+	SetRemoteAddr(net.Addr)
+	
+		
 }
 
 // TransportParameters are parameters sent to the peer during the handshake
