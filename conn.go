@@ -16,6 +16,8 @@ type connection interface {
 	RemoteAddr() net.Addr
 	SetCurrentRemoteAddr(net.Addr)
 	GetPconn() net.PacketConn
+	Encode() map[string]bytes.Buffer
+	
 }
 
 type conn struct {

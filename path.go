@@ -52,7 +52,7 @@ type path struct {
 
 //add getters
 func (p *path) GetConn() connection{
-	
+	utils.Debugf("%+v \n", p.conn.Encode())
 	return p.conn
 }
 
