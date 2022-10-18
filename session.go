@@ -155,6 +155,8 @@ func (s *session) SetIPAddress(addr string) {
 	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
 	s.paths[0].conn.SetCurrentRemoteAddr(udpAddr)
 	s.packer.SetRemoteAddr(udpAddr)
+	fmt.Println("len(paths)",len(s.paths))
+	fmt.Println("connection", s.paths[0].GetConn()) 
 	
 }
 func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) MyStruct {

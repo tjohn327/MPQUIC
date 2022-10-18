@@ -3,6 +3,8 @@ package quic
 import (
 	"net"
 	"sync"
+	"bytes"
+	"encoding/gob"
 	
 )
 
@@ -19,13 +21,45 @@ type connection interface {
 type conn struct {
 	mutex sync.RWMutex
 
-	pconn       net.PacketConn
+	pconn       net.PacketConn 
 	currentAddr net.Addr
 }
 
+
 var _ connection = &conn{}
 
-func (c *conn) GetPconn() net.PacketConn {
+func ToEncode(e interface{}) bytes.Buffer {
+	var network bytes.Buffer        // Stand-in for a network connection
+	enc := gob.NewEncoder(&network)
+	err := enc.Encode(e)
+	if err != nil {
+		panic("encode error:")
+	}
+	return network
+
+}
+func (c *conn) Encode() map[string]bytes.Buffer {
+	var buf = make(map[string]bytes.Buffer)
+	buf["mutex"] = ToEncode(c.mutex)
+	buf["pconn"] = ToEncode(c.pconn)
+	buf["currentAddr"] = ToEncode(c.currentAddr)
+
+	return buf
+}
+
+/*func (c *conn) Decode(network bytes.Buffer) {
+	    
+	dec := gob.NewDecoder(&network)
+	err := dec.Decode(c)
+	if err != nil {
+		panic("decode error")
+	}	
+}*/
+
+
+
+
+func (c *conn) GetPconn() net.PacketConn  {
 	//fmt.Printf(" \n --conf fd: %+v\n", c.pconn.GetFd())
 	return c.pconn
 }
