@@ -5,6 +5,7 @@ import (
 	"sync"
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	
 )
 
@@ -35,14 +36,14 @@ func ToEncode(e interface{}) bytes.Buffer {
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(e)
 	if err != nil {
-		panic("encode error:")
+		fmt.Println("encode error: ",err)
 	}
 	return network
 
 }
 func (c *conn) Encode() map[string]bytes.Buffer {
 	var buf = make(map[string]bytes.Buffer)
-	buf["mutex"] = ToEncode(c.mutex)
+	//buf["mutex"] = ToEncode(c.mutex)
 	buf["pconn"] = ToEncode(c.pconn)
 	buf["currentAddr"] = ToEncode(c.currentAddr)
 
