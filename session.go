@@ -158,6 +158,7 @@ func (s *session) SetIPAddress(addr string) {
 	fmt.Println("len(paths)",len(s.paths))
 	fmt.Println("connection", s.paths[0].GetConn()) 
 	
+	
 }
 func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) MyStruct {
 	return MyStruct{
