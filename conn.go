@@ -43,9 +43,9 @@ func ToEncode(e interface{}) bytes.Buffer {
 }
 func (c *conn) Encode() map[string]bytes.Buffer {
 	var buf = make(map[string]bytes.Buffer)
-	//buf["mutex"] = ToEncode(c.mutex)
+	buf["mutex"] = ToEncode(c.mutex)
 	buf["pconn"] = ToEncode(c.pconn)
-	buf["currentAddr"] = ToEncode(c.currentAddr)
+	//buf["currentAddr"] = ToEncode(c.currentAddr)
 
 	return buf
 }
