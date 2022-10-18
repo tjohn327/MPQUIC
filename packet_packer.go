@@ -80,25 +80,25 @@ func (p *packetPacker) PackConnectionClose(ccf *wire.ConnectionCloseFrame, pth *
 // PackPing packs a packet that ONLY contains a PingFrame
 func (p *packetPacker) PackPing(pf *wire.PingFrame, pth *path) (*packedPacket, error) {
 	// Add the PingFrame in front of the controlFrames
-	pth.SetLeastUnacked(pth.sentPacketHandler.GetLeastUnacked())
+	pth.SetLeastUnacked(pth.SentPacketHandler.GetLeastUnacked())
 	p.controlFrames = append([]wire.Frame{pf}, p.controlFrames...)
 	return p.PackPacket(pth)
 }
 
 func (p *packetPacker) PackAckPacket(pth *path) (*packedPacket, error) {
-	if p.ackFrame[pth.pathID] == nil {
+	if p.ackFrame[pth.PathID] == nil {
 		return nil, errors.New("packet packer BUG: no ack frame queued")
 	}
 	encLevel, sealer := p.cryptoSetup.GetSealer()
 	ph := p.getPublicHeader(encLevel, pth)
-	frames := []wire.Frame{p.ackFrame[pth.pathID]}
-	if p.stopWaiting[pth.pathID] != nil {
-		p.stopWaiting[pth.pathID].PacketNumber = ph.PacketNumber
-		p.stopWaiting[pth.pathID].PacketNumberLen = ph.PacketNumberLen
-		frames = append(frames, p.stopWaiting[pth.pathID])
-		p.stopWaiting[pth.pathID] = nil
+	frames := []wire.Frame{p.ackFrame[pth.PathID]}
+	if p.stopWaiting[pth.PathID] != nil {
+		p.stopWaiting[pth.PathID].PacketNumber = ph.PacketNumber
+		p.stopWaiting[pth.PathID].PacketNumberLen = ph.PacketNumberLen
+		frames = append(frames, p.stopWaiting[pth.PathID])
+		p.stopWaiting[pth.PathID] = nil
 	}
-	p.ackFrame[pth.pathID] = nil
+	p.ackFrame[pth.PathID] = nil
 	raw, err := p.writeAndSealPacket(ph, frames, sealer, pth)
 	return &packedPacket{
 		number:          ph.PacketNumber,
@@ -117,14 +117,14 @@ func (p *packetPacker) PackHandshakeRetransmission(packet *ackhandler.Packet, pt
 	if err != nil {
 		return nil, err
 	}
-	if p.stopWaiting[pth.pathID] == nil {
+	if p.stopWaiting[pth.PathID] == nil {
 		return nil, errors.New("PacketPacker BUG: Handshake retransmissions must contain a StopWaitingFrame")
 	}
 	ph := p.getPublicHeader(packet.EncryptionLevel, pth)
-	p.stopWaiting[pth.pathID].PacketNumber = ph.PacketNumber
-	p.stopWaiting[pth.pathID].PacketNumberLen = ph.PacketNumberLen
-	frames := append([]wire.Frame{p.stopWaiting[pth.pathID]}, packet.Frames...)
-	p.stopWaiting[pth.pathID] = nil
+	p.stopWaiting[pth.PathID].PacketNumber = ph.PacketNumber
+	p.stopWaiting[pth.PathID].PacketNumberLen = ph.PacketNumberLen
+	frames := append([]wire.Frame{p.stopWaiting[pth.PathID]}, packet.Frames...)
+	p.stopWaiting[pth.PathID] = nil
 	raw, err := p.writeAndSealPacket(ph, frames, sealer, pth)
 	return &packedPacket{
 		number:          ph.PacketNumber,
@@ -148,9 +148,9 @@ func (p *packetPacker) PackPacket(pth *path) (*packedPacket, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.stopWaiting[pth.pathID] != nil {
-		p.stopWaiting[pth.pathID].PacketNumber = publicHeader.PacketNumber
-		p.stopWaiting[pth.pathID].PacketNumberLen = publicHeader.PacketNumberLen
+	if p.stopWaiting[pth.PathID] != nil {
+		p.stopWaiting[pth.PathID].PacketNumber = publicHeader.PacketNumber
+		p.stopWaiting[pth.PathID].PacketNumberLen = publicHeader.PacketNumberLen
 	}
 
 	// TODO (QDC): rework this part with PING
@@ -177,11 +177,11 @@ func (p *packetPacker) PackPacket(pth *path) (*packedPacket, error) {
 		return nil, nil
 	}
 	// Don't send out packets that only contain a StopWaitingFrame
-	if len(payloadFrames) == 1 && p.stopWaiting[pth.pathID] != nil {
+	if len(payloadFrames) == 1 && p.stopWaiting[pth.PathID] != nil {
 		return nil, nil
 	}
-	p.stopWaiting[pth.pathID] = nil
-	p.ackFrame[pth.pathID] = nil
+	p.stopWaiting[pth.PathID] = nil
+	p.ackFrame[pth.PathID] = nil
 
 	raw, err := p.writeAndSealPacket(publicHeader, payloadFrames, sealer, pth)
 	if err != nil {
@@ -225,17 +225,17 @@ func (p *packetPacker) composeNextPacket(
 	var payloadFrames []wire.Frame
 
 	// STOP_WAITING and ACK will always fit
-	if p.stopWaiting[pth.pathID] != nil {
-		payloadFrames = append(payloadFrames, p.stopWaiting[pth.pathID])
-		l, err := p.stopWaiting[pth.pathID].MinLength(p.version)
+	if p.stopWaiting[pth.PathID] != nil {
+		payloadFrames = append(payloadFrames, p.stopWaiting[pth.PathID])
+		l, err := p.stopWaiting[pth.PathID].MinLength(p.version)
 		if err != nil {
 			return nil, err
 		}
 		payloadLength += l
 	}
-	if p.ackFrame[pth.pathID] != nil {
-		payloadFrames = append(payloadFrames, p.ackFrame[pth.pathID])
-		l, err := p.ackFrame[pth.pathID].MinLength(p.version)
+	if p.ackFrame[pth.PathID] != nil {
+		payloadFrames = append(payloadFrames, p.ackFrame[pth.PathID])
+		l, err := p.ackFrame[pth.PathID].MinLength(p.version)
 		if err != nil {
 			return nil, err
 		}
@@ -289,17 +289,17 @@ func (p *packetPacker) composeNextPacket(
 func (p *packetPacker) QueueControlFrame(frame wire.Frame, pth *path) {
 	switch f := frame.(type) {
 	case *wire.StopWaitingFrame:
-		p.stopWaiting[pth.pathID] = f
+		p.stopWaiting[pth.PathID] = f
 	case *wire.AckFrame:
-		p.ackFrame[pth.pathID] = f
+		p.ackFrame[pth.PathID] = f
 	default:
 		p.controlFrames = append(p.controlFrames, f)
 	}
 }
 
 func (p *packetPacker) getPublicHeader(encLevel protocol.EncryptionLevel, pth *path) *wire.PublicHeader {
-	pnum := pth.packetNumberGenerator.Peek()
-	packetNumberLen := protocol.GetPacketNumberLengthForPublicHeader(pnum, pth.leastUnacked)
+	pnum := pth.PacketNumberGenerator.Peek()
+	packetNumberLen := protocol.GetPacketNumberLengthForPublicHeader(pnum, pth.LeastUnacked)
 	publicHeader := &wire.PublicHeader{
 		ConnectionID:         p.connectionID,
 		PacketNumber:         pnum,
@@ -316,9 +316,9 @@ func (p *packetPacker) getPublicHeader(encLevel protocol.EncryptionLevel, pth *p
 	}
 
 	// XXX (QDC): need a additional check because of tests
-	if pth.sess != nil && pth.sess.handshakeComplete && p.version >= protocol.VersionMP {
+	if pth.Sess != nil && pth.Sess.handshakeComplete && p.version >= protocol.VersionMP {
 		publicHeader.MultipathFlag = true
-		publicHeader.PathID = pth.pathID
+		publicHeader.PathID = pth.PathID
 		// XXX (QDC): in case of doubt, never truncate the connection ID. This might change...
 		publicHeader.TruncateConnectionID = false
 	}
@@ -353,7 +353,7 @@ func (p *packetPacker) writeAndSealPacket(
 	_ = sealer.Seal(raw[payloadStartIndex:payloadStartIndex], raw[payloadStartIndex:], publicHeader.PacketNumber, raw[:payloadStartIndex])
 	raw = raw[0 : buffer.Len()+sealer.Overhead()]
 
-	num := pth.packetNumberGenerator.Pop()
+	num := pth.PacketNumberGenerator.Pop()
 	if num != publicHeader.PacketNumber {
 		return nil, errors.New("packetPacker BUG: Peeked and Popped packet numbers do not match")
 	}

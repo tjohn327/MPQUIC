@@ -18,80 +18,80 @@ const (
 )
 
 type path struct {
-	pathID protocol.PathID
-	conn   connection
-	sess   *session
+	PathID protocol.PathID
+	Conn   connection
+	Sess   *session
 
-	rttStats *congestion.RTTStats
+	RttStats *congestion.RTTStats
 
-	sentPacketHandler     ackhandler.SentPacketHandler
-	receivedPacketHandler ackhandler.ReceivedPacketHandler
+	SentPacketHandler     ackhandler.SentPacketHandler
+	ReceivedPacketHandler ackhandler.ReceivedPacketHandler
 
-	open      utils.AtomicBool
-	closeChan chan *qerr.QuicError
-	runClosed chan struct{}
+	Open      utils.AtomicBool
+	CloseChan chan *qerr.QuicError
+	RunClosed chan struct{}
 
-	potentiallyFailed utils.AtomicBool
+	PotentiallyFailed utils.AtomicBool
 
-	sentPacket          chan struct{}
+	SentPacket          chan struct{}
 
 	// It is now the responsibility of the path to keep its packet number
-	packetNumberGenerator *packetNumberGenerator
+	PacketNumberGenerator *packetNumberGenerator
 
-	lastRcvdPacketNumber protocol.PacketNumber
+	LastRcvdPacketNumber protocol.PacketNumber
 	// Used to calculate the next packet number from the truncated wire
 	// representation, and sent back in public reset packets
-	largestRcvdPacketNumber protocol.PacketNumber
+	LargestRcvdPacketNumber protocol.PacketNumber
 
-	leastUnacked protocol.PacketNumber
+	LeastUnacked protocol.PacketNumber
 
-	lastNetworkActivityTime time.Time
+	LastNetworkActivityTime time.Time
 
-	timer           *utils.Timer
+	Timer           *utils.Timer
 }
 
 //add getters
 func (p *path) GetConn() connection{
-	utils.Debugf("%+v \n", p.conn.Encode())
-	return p.conn
+	utils.Debugf("%+v \n", p.Conn.Encode())
+	return p.Conn
 }
 
 // setup initializes values that are independent of the perspective
 func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
-	p.rttStats = &congestion.RTTStats{}
+	p.RttStats = &congestion.RTTStats{}
 
 	var cong congestion.SendAlgorithm
 
-	if p.sess.version >= protocol.VersionMP && oliaSenders != nil && p.pathID != protocol.InitialPathID {
-		cong = congestion.NewOliaSender(oliaSenders, p.rttStats, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
-		oliaSenders[p.pathID] = cong.(*congestion.OliaSender)
+	if p.Sess.version >= protocol.VersionMP && oliaSenders != nil && p.PathID != protocol.InitialPathID {
+		cong = congestion.NewOliaSender(oliaSenders, p.RttStats, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
+		oliaSenders[p.PathID] = cong.(*congestion.OliaSender)
 	}
 
-	sentPacketHandler := ackhandler.NewSentPacketHandler(p.rttStats, cong, p.onRTO)
+	sentPacketHandler := ackhandler.NewSentPacketHandler(p.RttStats, cong, p.onRTO)
 
 	now := time.Now()
 
-	p.sentPacketHandler = sentPacketHandler
-	p.receivedPacketHandler = ackhandler.NewReceivedPacketHandler(p.sess.version)
+	p.SentPacketHandler = sentPacketHandler
+	p.ReceivedPacketHandler = ackhandler.NewReceivedPacketHandler(p.Sess.version)
 
-	p.packetNumberGenerator = newPacketNumberGenerator(protocol.SkipPacketAveragePeriodLength)
+	p.PacketNumberGenerator = newPacketNumberGenerator(protocol.SkipPacketAveragePeriodLength)
 
-	p.closeChan = make(chan *qerr.QuicError, 1)
-	p.runClosed = make(chan struct{}, 1)
-	p.sentPacket = make(chan struct{}, 1)
+	p.CloseChan = make(chan *qerr.QuicError, 1)
+	p.RunClosed = make(chan struct{}, 1)
+	p.SentPacket = make(chan struct{}, 1)
 
-	p.timer = utils.NewTimer()
-	p.lastNetworkActivityTime = now
+	p.Timer = utils.NewTimer()
+	p.LastNetworkActivityTime = now
 
-	p.open.Set(true)
-	p.potentiallyFailed.Set(false)
+	p.Open.Set(true)
+	p.PotentiallyFailed.Set(false)
 
 	// Once the path is setup, run it
 	go p.run()
 }
 
 func (p *path) close() error {
-	p.open.Set(false)
+	p.Open.Set(false)
 	return nil
 }
 
@@ -101,7 +101,7 @@ runLoop:
 	for {
 		// Close immediately if requested
 		select {
-		case <-p.closeChan:
+		case <-p.CloseChan:
 			break runLoop
 		default:
 		}
@@ -109,107 +109,107 @@ runLoop:
 		p.maybeResetTimer()
 
 		select {
-		case <-p.closeChan:
+		case <-p.CloseChan:
 			break runLoop
-		case <-p.timer.Chan():
-			p.timer.SetRead()
+		case <-p.Timer.Chan():
+			p.Timer.SetRead()
 			select {
-			case p.sess.pathTimers <- p:
+			case p.Sess.pathTimers <- p:
 			// XXX (QDC): don't remain stuck here!
-			case <-p.closeChan:
+			case <-p.CloseChan:
 				break runLoop
-			case <-p.sentPacket:
+			case <-p.SentPacket:
 				// Don't remain stuck here!
 			}
-		case <-p.sentPacket:
+		case <-p.SentPacket:
 			// Used to reset the path timer
 		}
 	}
 	p.close()
-	p.runClosed <- struct{}{}
+	p.RunClosed <- struct{}{}
 }
 
 func (p *path) SendingAllowed() bool {
-	return p.open.Get() && p.sentPacketHandler.SendingAllowed()
+	return p.Open.Get() && p.SentPacketHandler.SendingAllowed()
 }
 
 func (p *path) GetStopWaitingFrame(force bool) *wire.StopWaitingFrame {
-	return p.sentPacketHandler.GetStopWaitingFrame(force)
+	return p.SentPacketHandler.GetStopWaitingFrame(force)
 }
 
 func (p *path) GetAckFrame() *wire.AckFrame {
-	ack := p.receivedPacketHandler.GetAckFrame()
+	ack := p.ReceivedPacketHandler.GetAckFrame()
 	if ack != nil {
-		ack.PathID = p.pathID
+		ack.PathID = p.PathID
 	}
 
 	return ack
 }
 
 func (p *path) GetClosePathFrame() *wire.ClosePathFrame {
-	closePathFrame := p.receivedPacketHandler.GetClosePathFrame()
+	closePathFrame := p.ReceivedPacketHandler.GetClosePathFrame()
 	if closePathFrame != nil {
-		closePathFrame.PathID = p.pathID
+		closePathFrame.PathID = p.PathID
 	}
 
 	return closePathFrame
 }
 
 func (p *path) maybeResetTimer() {
-	deadline := p.lastNetworkActivityTime.Add(p.idleTimeout())
+	deadline := p.LastNetworkActivityTime.Add(p.idleTimeout())
 
-	if ackAlarm := p.receivedPacketHandler.GetAlarmTimeout(); !ackAlarm.IsZero() {
+	if ackAlarm := p.ReceivedPacketHandler.GetAlarmTimeout(); !ackAlarm.IsZero() {
 		deadline = ackAlarm
 	}
-	if lossTime := p.sentPacketHandler.GetAlarmTimeout(); !lossTime.IsZero() {
+	if lossTime := p.SentPacketHandler.GetAlarmTimeout(); !lossTime.IsZero() {
 		deadline = utils.MinTime(deadline, lossTime)
 	}
 
 	deadline = utils.MinTime(utils.MaxTime(deadline, time.Now().Add(minPathTimer)), time.Now().Add(maxPathTimer))
 
-	p.timer.Reset(deadline)
+	p.Timer.Reset(deadline)
 }
 
 func (p *path) idleTimeout() time.Duration {
 	// TODO (QDC): probably this should be refined at path level
-	cryptoSetup := p.sess.cryptoSetup
+	cryptoSetup := p.Sess.cryptoSetup
 	if cryptoSetup != nil {
-		if p.open.Get() && (p.pathID != 0 || p.sess.handshakeComplete) {
-			return p.sess.connectionParameters.GetIdleConnectionStateLifetime()
+		if p.Open.Get() && (p.PathID != 0 || p.Sess.handshakeComplete) {
+			return p.Sess.connectionParameters.GetIdleConnectionStateLifetime()
 		}
-		return p.sess.config.HandshakeTimeout
+		return p.Sess.config.HandshakeTimeout
 	}
 	return time.Second
 }
 
 func (p *path) handlePacketImpl(pkt *receivedPacket) error {
-	if !p.open.Get() {
+	if !p.Open.Get() {
 		// Path is closed, ignore packet
 		return nil
 	}
 
 	if !pkt.rcvTime.IsZero() {
-		p.lastNetworkActivityTime = pkt.rcvTime
+		p.LastNetworkActivityTime = pkt.rcvTime
 	}
 	hdr := pkt.publicHeader
 	data := pkt.data
 
 	// We just received a new packet on that path, so it works
-	p.potentiallyFailed.Set(false)
+	p.PotentiallyFailed.Set(false)
 
 	// Calculate packet number
 	hdr.PacketNumber = protocol.InferPacketNumber(
 		hdr.PacketNumberLen,
-		p.largestRcvdPacketNumber,
+		p.LargestRcvdPacketNumber,
 		hdr.PacketNumber,
 	)
 
-	packet, err := p.sess.unpacker.Unpack(hdr.Raw, hdr, data)
+	packet, err := p.Sess.unpacker.Unpack(hdr.Raw, hdr, data)
 	if utils.Debug() {
 		if err != nil {
-			utils.Debugf("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.pathID)
+			utils.Debugf("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.PathID)
 		} else {
-			utils.Debugf("<- Reading packet 0x%x (%d bytes) for connection %x on path %x, %s", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.pathID, packet.encryptionLevel)
+			utils.Debugf("<- Reading packet 0x%x (%d bytes) for connection %x on path %x, %s", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.PathID, packet.encryptionLevel)
 		}
 	}
 
@@ -218,20 +218,20 @@ func (p *path) handlePacketImpl(pkt *receivedPacket) error {
 	if quicErr, ok := err.(*qerr.QuicError); ok && quicErr.ErrorCode == qerr.DecryptionFailure {
 		return err
 	}
-	if p.sess.perspective == protocol.PerspectiveServer {
+	if p.Sess.perspective == protocol.PerspectiveServer {
 		// update the remote address, even if unpacking failed for any other reason than a decryption error
-		p.conn.SetCurrentRemoteAddr(pkt.remoteAddr)
+		p.Conn.SetCurrentRemoteAddr(pkt.remoteAddr)
 	}
 	if err != nil {
 		return err
 	}
 
-	p.lastRcvdPacketNumber = hdr.PacketNumber
+	p.LastRcvdPacketNumber = hdr.PacketNumber
 	// Only do this after decrupting, so we are sure the packet is not attacker-controlled
-	p.largestRcvdPacketNumber = utils.MaxPacketNumber(p.largestRcvdPacketNumber, hdr.PacketNumber)
+	p.LargestRcvdPacketNumber = utils.MaxPacketNumber(p.LargestRcvdPacketNumber, hdr.PacketNumber)
 
 	isRetransmittable := ackhandler.HasRetransmittableFrames(packet.frames)
-	if err = p.receivedPacketHandler.ReceivedPacket(hdr.PacketNumber, isRetransmittable); err != nil {
+	if err = p.ReceivedPacketHandler.ReceivedPacket(hdr.PacketNumber, isRetransmittable); err != nil {
 		return err
 	}
 
@@ -239,19 +239,19 @@ func (p *path) handlePacketImpl(pkt *receivedPacket) error {
 		return err
 	}
 
-	return p.sess.handleFrames(packet.frames, p)
+	return p.Sess.handleFrames(packet.frames, p)
 }
 
 func (p *path) onRTO(lastSentTime time.Time) bool {
 	// Was there any activity since last sent packet?
-	if p.lastNetworkActivityTime.Before(lastSentTime) {
-		p.potentiallyFailed.Set(true)
-		p.sess.schedulePathsFrame()
+	if p.LastNetworkActivityTime.Before(lastSentTime) {
+		p.PotentiallyFailed.Set(true)
+		p.Sess.schedulePathsFrame()
 		return true
 	}
 	return false
 }
 
 func (p *path) SetLeastUnacked(leastUnacked protocol.PacketNumber) {
-	p.leastUnacked = leastUnacked
+	p.LeastUnacked = leastUnacked
 }

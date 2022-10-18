@@ -400,7 +400,7 @@ func (s *server) handlePacket(rcvRawPacket *receivedRawPacket) error {
 
 		utils.Infof("Serving new connection: %x, version %s from %v", hdr.ConnectionID, version, remoteAddr)
 		// It's the responsibility of the server to give a proper connection
-		conn := &conn{pconn: pconn, currentAddr: remoteAddr}
+		conn := &conn{Pconn: pconn, CurrentAddr: remoteAddr}
 		var handshakeChan <-chan handshakeEvent
 		session, handshakeChan, err = s.newSession(
 			conn,

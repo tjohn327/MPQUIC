@@ -22,10 +22,10 @@ type connection interface {
 }
 
 type conn struct {
-	mutex sync.RWMutex
+	Mutex sync.RWMutex
 
-	pconn       net.PacketConn 
-	currentAddr net.Addr
+	Pconn       net.PacketConn 
+	CurrentAddr net.Addr
 }
 
 
@@ -43,9 +43,9 @@ func ToEncode(e interface{}) bytes.Buffer {
 }
 func (c *conn) Encode() map[string]bytes.Buffer {
 	var buf = make(map[string]bytes.Buffer)
-	buf["mutex"] = ToEncode(c.mutex)
-	buf["pconn"] = ToEncode(c.pconn)
-	//buf["currentAddr"] = ToEncode(c.currentAddr)
+	buf["mutex"] = ToEncode(c.Mutex)
+	buf["pconn"] = ToEncode(c.Pconn)
+	//buf["currentAddr"] = ToEncode(c.CurrentAddr)
 
 	return buf
 }
@@ -63,38 +63,38 @@ func (c *conn) Encode() map[string]bytes.Buffer {
 
 
 func (c *conn) GetPconn() net.PacketConn  {
-	//fmt.Printf(" \n --conf fd: %+v\n", c.pconn.GetFd())
-	return c.pconn
+	//fmt.Printf(" \n --conf fd: %+v\n", c.Pconn.GetFd())
+	return c.Pconn
 }
 
 func (c *conn) Write(p []byte) error {
-	_, err := c.pconn.WriteTo(p, c.currentAddr)
+	_, err := c.Pconn.WriteTo(p, c.CurrentAddr)
 	return err
 }
 
 func (c *conn) Read(p []byte) (int, net.Addr, error) {
-	return c.pconn.ReadFrom(p)
+	return c.Pconn.ReadFrom(p)
 }
 
 func (c *conn) SetCurrentRemoteAddr(addr net.Addr) {
-	c.mutex.Lock()
-	c.currentAddr = addr
-	c.mutex.Unlock()
+	c.Mutex.Lock()
+	c.CurrentAddr = addr
+	c.Mutex.Unlock()
 }
 
 func (c *conn) LocalAddr() net.Addr {
-	return c.pconn.LocalAddr()
+	return c.Pconn.LocalAddr()
 }
 
 
 
 func (c *conn) RemoteAddr() net.Addr {
-	c.mutex.RLock()
-	addr := c.currentAddr
-	c.mutex.RUnlock()
+	c.Mutex.RLock()
+	addr := c.CurrentAddr
+	c.Mutex.RUnlock()
 	return addr
 }
 
 func (c *conn) Close() error {
-	return c.pconn.Close()
+	return c.Pconn.Close()
 }

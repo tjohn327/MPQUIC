@@ -68,10 +68,10 @@ func (f *streamFramer) AddPathsFrameForTransmission(s *session) {
 	i := 0
 	for pathID := range s.paths {
 		paths[i] = pathID
-		if s.paths[pathID].potentiallyFailed.Get() {
+		if s.paths[pathID].PotentiallyFailed.Get() {
 			remoteRTTs[i] = time.Hour
 		} else {
-			remoteRTTs[i] = s.paths[pathID].rttStats.SmoothedRTT()
+			remoteRTTs[i] = s.paths[pathID].RttStats.SmoothedRTT()
 		}
 		i++
 	}

@@ -153,11 +153,11 @@ var _ Session = &session{}
 
 func (s *session) SetIPAddress(addr string) {
 	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
-	s.paths[0].conn.SetCurrentRemoteAddr(udpAddr)
+	s.paths[0].Conn.SetCurrentRemoteAddr(udpAddr)
 	s.packer.SetRemoteAddr(udpAddr)
 	fmt.Println("len(paths)",len(s.paths))
 	fmt.Println("connection", s.paths[0].GetConn()) 
-	
+
 	
 }
 func (s *session) InitializeMyStrut(idc protocol.ConnectionID,ipaddr net.Addr) MyStruct {
@@ -282,9 +282,9 @@ func (s *session) setup(
 	if pconnMgr == nil && conn != nil {
 		// XXX ONLY VALID FOR BENCHMARK!
 		s.paths[protocol.InitialPathID] = &path{
-			pathID: protocol.InitialPathID,
-			sess:   s,
-			conn:   conn,
+			PathID: protocol.InitialPathID,
+			Sess:   s,
+			Conn:   conn,
 		}
 		s.paths[protocol.InitialPathID].setup(nil)
 	} else if pconnMgr != nil && conn != nil {
@@ -294,7 +294,7 @@ func (s *session) setup(
 		panic("session without conn")
 	}
 	// XXX (QDC): use the PathID 0 as the session RTT path
-	s.rttStats = s.paths[protocol.InitialPathID].rttStats
+	s.rttStats = s.paths[protocol.InitialPathID].RttStats
 	s.flowControlManager = flowcontrol.NewFlowControlManager(s.connectionParameters, s.rttStats, s.remoteRTTs)
 	s.streamsMap = newStreamsMap(s.newStream, s.perspective, s.connectionParameters)
 	s.streamFramer = newStreamFramer(s.streamsMap, s.flowControlManager)
@@ -319,7 +319,7 @@ func (s *session) setup(
 		} else {
 			s.cryptoSetup, err = newCryptoSetup(
 				s.connectionID,
-				s.paths[protocol.InitialPathID].conn.RemoteAddr(),
+				s.paths[protocol.InitialPathID].Conn.RemoteAddr(),
 				s.version,
 				scfg,
 				cryptoStream,
@@ -392,7 +392,7 @@ runLoop:
 			s.pathsLock.RLock()
 			for _, pth := range s.paths {
 				select {
-				case pth.closeChan <- nil:
+				case pth.CloseChan <- nil:
 				default:
 				}
 			}
@@ -450,10 +450,10 @@ runLoop:
 
 		now := time.Now()
 		if timerPth != nil {
-			if timeout := timerPth.sentPacketHandler.GetAlarmTimeout(); !timeout.IsZero() && timeout.Before(now) {
+			if timeout := timerPth.SentPacketHandler.GetAlarmTimeout(); !timeout.IsZero() && timeout.Before(now) {
 				// This could cause packets to be retransmitted, so check it before trying
 				// to send packets.
-				timerPth.sentPacketHandler.OnAlarm()
+				timerPth.SentPacketHandler.OnAlarm()
 			}
 			timerPth = nil
 		}
@@ -584,7 +584,7 @@ func (s *session) handleFrames(fs []wire.Frame, p *path) error {
 		case *wire.StopWaitingFrame:
 			// LeastUnacked is guaranteed to have LeastUnacked > 0
 			// therefore this will never underflow
-			p.receivedPacketHandler.SetLowerLimit(frame.LeastUnacked - 1)
+			p.ReceivedPacketHandler.SetLowerLimit(frame.LeastUnacked - 1)
 		case *wire.RstStreamFrame:
 			err = s.handleRstStreamFrame(frame)
 		case *wire.WindowUpdateFrame:
@@ -606,7 +606,7 @@ func (s *session) handleFrames(fs []wire.Frame, p *path) error {
 				s.remoteRTTs[frame.PathIDs[i]] = frame.RemoteRTTs[i]
 				if frame.RemoteRTTs[i] >= 30 * time.Minute {
 					// Path is potentially failed
-					s.paths[frame.PathIDs[i]].potentiallyFailed.Set(true)
+					s.paths[frame.PathIDs[i]].PotentiallyFailed.Set(true)
 				}
 			}
 			s.pathsLock.RUnlock()
@@ -660,8 +660,8 @@ func (s *session) handleStreamFrame(frame *wire.StreamFrame) error {
 		s.pathsLock.RLock()
 		utils.Infof("Info for stream %x of %x", frame.StreamID, s.connectionID)
 		for pathID, pth := range s.paths {
-			sntPkts, sntRetrans, sntLost := pth.sentPacketHandler.GetStatistics()
-			rcvPkts := pth.receivedPacketHandler.GetStatistics()
+			sntPkts, sntRetrans, sntLost := pth.SentPacketHandler.GetStatistics()
+			rcvPkts := pth.ReceivedPacketHandler.GetStatistics()
 			utils.Infof("Path %x: sent %d retrans %d lost %d; rcv %d", pathID, sntPkts, sntRetrans, sntLost, rcvPkts)
 		}
 		s.pathsLock.RUnlock()
@@ -698,10 +698,10 @@ func (s *session) handleRstStreamFrame(frame *wire.RstStreamFrame) error {
 
 func (s *session) handleAckFrame(frame *wire.AckFrame) error {
 	pth := s.paths[frame.PathID]
-	err := pth.sentPacketHandler.ReceivedAck(frame, pth.lastRcvdPacketNumber, pth.lastNetworkActivityTime)
-	if err == nil && pth.rttStats.SmoothedRTT() > s.rttStats.SmoothedRTT() {
+	err := pth.SentPacketHandler.ReceivedAck(frame, pth.LastRcvdPacketNumber, pth.LastNetworkActivityTime)
+	if err == nil && pth.RttStats.SmoothedRTT() > s.rttStats.SmoothedRTT() {
 		// Update the session RTT, which comes to take the max RTT on all paths
-		s.rttStats.UpdateSessionRTT(pth.rttStats.SmoothedRTT())
+		s.rttStats.UpdateSessionRTT(pth.RttStats.SmoothedRTT())
 	}
 	return err
 }
@@ -713,7 +713,7 @@ func (s *session) handleClosePathFrame(frame *wire.ClosePathFrame) error {
 	// This is safe because closePath checks this
 	pth := s.paths[frame.PathID]
 	// This allows the host to retransmit packets sent on this path that were not acked by the ClosePath frame
-	return pth.sentPacketHandler.ReceivedClosePath(frame, pth.lastRcvdPacketNumber, pth.lastNetworkActivityTime)
+	return pth.SentPacketHandler.ReceivedClosePath(frame, pth.LastRcvdPacketNumber, pth.LastNetworkActivityTime)
 }
 
 func (s *session) closePath(pthID protocol.PathID, sendClosePathFrame bool) error {
@@ -741,7 +741,7 @@ func (s *session) closePath(pthID protocol.PathID, sendClosePathFrame bool) erro
 		return nil
 	}
 
-	pth.sentPacketHandler.SetInflightAsLost()
+	pth.SentPacketHandler.SetInflightAsLost()
 	closePathFrame := pth.GetClosePathFrame()
 	s.streamFramer.AddClosePathFrameForTransmission(closePathFrame)
 
@@ -759,13 +759,13 @@ func (s *session) closePaths() {
 		s.pathManager.closePaths()
 		if s.pathManager.pconnMgr == nil {
 			// XXX For tests
-			s.paths[0].conn.Close()
+			s.paths[0].Conn.Close()
 		}
 	} else {
 		s.pathsLock.RLock()
 		for _, pth := range s.paths {
 			select {
-			case pth.closeChan<-nil:
+			case pth.CloseChan<-nil:
 			default:
 				// Don't block
 			}
@@ -775,7 +775,7 @@ func (s *session) closePaths() {
 
 	// wait for the run loops of path to finish
 	for _, pth := range s.paths {
-		<-pth.runClosed
+		<-pth.RunClosed
 	}
 }
 
@@ -833,7 +833,7 @@ func (s *session) handleCloseError(closeErr closeError) error {
 		quicErr == handshake.ErrHOLExperiment ||
 		quicErr == handshake.ErrNSTPExperiment {
 		// XXX seems reasonable to send public reset on path ID 0, but this can change
-		return s.sendPublicReset(s.paths[0].lastRcvdPacketNumber)
+		return s.sendPublicReset(s.paths[0].LastRcvdPacketNumber)
 	}
 	return s.sendConnectionClose(quicErr)
 }
@@ -844,7 +844,7 @@ func (s *session) sendPacket() error {
 
 func (s *session) sendPackedPacket(packet *packedPacket, pth *path) error {
 	defer putPacketBuffer(packet.raw)
-	err := pth.sentPacketHandler.SentPacket(&ackhandler.Packet{
+	err := pth.SentPacketHandler.SentPacket(&ackhandler.Packet{
 		PacketNumber:    packet.number,
 		Frames:          packet.frames,
 		Length:          protocol.ByteCount(len(packet.raw)),
@@ -853,15 +853,15 @@ func (s *session) sendPackedPacket(packet *packedPacket, pth *path) error {
 	if err != nil {
 		return err
 	}
-	pth.sentPacket<-struct{}{}
+	pth.SentPacket<-struct{}{}
 
-	s.logPacket(packet, pth.pathID)
+	s.logPacket(packet, pth.PathID)
 	
-	return pth.conn.Write(packet.raw)
+	return pth.Conn.Write(packet.raw)
 }
 
 func (s *session) sendConnectionClose(quicErr *qerr.QuicError) error {
-	s.paths[0].SetLeastUnacked(s.paths[0].sentPacketHandler.GetLeastUnacked())
+	s.paths[0].SetLeastUnacked(s.paths[0].SentPacketHandler.GetLeastUnacked())
 	packet, err := s.packer.PackConnectionClose(&wire.ConnectionCloseFrame{
 		ErrorCode:    quicErr.ErrorCode,
 		ReasonPhrase: quicErr.ErrorMessage,
@@ -871,7 +871,7 @@ func (s *session) sendConnectionClose(quicErr *qerr.QuicError) error {
 	}
 	s.logPacket(packet, protocol.InitialPathID)
 	// XXX (QDC): seems reasonable to send on pathID 0, but this can change
-	return s.paths[protocol.InitialPathID].conn.Write(packet.raw)
+	return s.paths[protocol.InitialPathID].Conn.Write(packet.raw)
 }
 
 func (s *session) sendPing(pth *path) error {
@@ -966,7 +966,7 @@ func (s *session) garbageCollectStreams() {
 func (s *session) sendPublicReset(rejectedPacketNumber protocol.PacketNumber) error {
 	utils.Infof("Sending public reset for connection %x, packet number %d", s.connectionID, rejectedPacketNumber)
 	// XXX: seems reasonable to send on the pathID 0, but this can change
-	return s.paths[protocol.InitialPathID].conn.Write(wire.WritePublicReset(s.connectionID, rejectedPacketNumber, 0))
+	return s.paths[protocol.InitialPathID].Conn.Write(wire.WritePublicReset(s.connectionID, rejectedPacketNumber, 0))
 }
 
 // scheduleSending signals that we have data for sending
@@ -1013,13 +1013,13 @@ func (s *session) getWindowUpdateFrames(force bool) []*wire.WindowUpdateFrame {
 
 func (s *session) LocalAddr() net.Addr {
 	// XXX (QDC): do it like with MPTCP (master initial path), what if it is closed?
-	return s.paths[0].conn.LocalAddr()
+	return s.paths[0].Conn.LocalAddr()
 }
 
 // RemoteAddr returns the net.Addr of the client
 func (s *session) RemoteAddr() net.Addr {
 	// XXX (QDC): do it like with MPTCP (master initial path), what if it is closed?
-	return s.paths[0].conn.RemoteAddr()
+	return s.paths[0].Conn.RemoteAddr()
 }
 
 func (s *session) GetVersion() protocol.VersionNumber {

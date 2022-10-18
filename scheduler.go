@@ -26,7 +26,7 @@ func (sch *scheduler) getRetransmission(s *session) (hasRetransmission bool, ret
 		s.pathsLock.RLock()
 	retransmitLoop:
 		for _, pthTmp := range s.paths {
-			retransmitPacket = pthTmp.sentPacketHandler.DequeuePacketForRetransmission()
+			retransmitPacket = pthTmp.SentPacketHandler.DequeuePacketForRetransmission()
 			if retransmitPacket != nil {
 				pth = pthTmp
 				break retransmitLoop
@@ -46,7 +46,7 @@ func (sch *scheduler) getRetransmission(s *session) (hasRetransmission bool, ret
 			utils.Debugf("\tDequeueing handshake retransmission for packet 0x%x", retransmitPacket.PacketNumber)
 			return
 		}
-		utils.Debugf("\tDequeueing retransmission of packet 0x%x from path %d", retransmitPacket.PacketNumber, pth.pathID)
+		utils.Debugf("\tDequeueing retransmission of packet 0x%x from path %d", retransmitPacket.PacketNumber, pth.PathID)
 		// resend the frames that were in the packet
 		for _, frame := range retransmitPacket.GetFramesForRetransmission() {
 			switch f := frame.(type) {
@@ -92,25 +92,25 @@ func (sch *scheduler) selectPathRoundRobin(s *session, hasRetransmission bool, h
 	lowerQuota = ^uint(0)
 
 pathLoop:
-	for pathID, pth := range s.paths {
+	for PathID, pth := range s.paths {
 		// Don't block path usage if we retransmit, even on another path
 		if !hasRetransmission && !pth.SendingAllowed() {
 			continue pathLoop
 		}
 
 		// If this path is potentially failed, do no consider it for sending
-		if pth.potentiallyFailed.Get() {
+		if pth.PotentiallyFailed.Get() {
 			continue pathLoop
 		}
 
-		// XXX Prevent using initial pathID if multiple paths
-		if pathID == protocol.InitialPathID {
+		// XXX Prevent using initial PathID if multiple paths
+		if PathID == protocol.InitialPathID {
 			continue pathLoop
 		}
 
-		currentQuota, ok = sch.quotas[pathID]
+		currentQuota, ok = sch.quotas[PathID]
 		if !ok {
-			sch.quotas[pathID] = 0
+			sch.quotas[PathID] = 0
 			currentQuota = 0
 		}
 
@@ -134,15 +134,15 @@ func (sch *scheduler) selectPathLowLatency(s *session, hasRetransmission bool, h
 	}
 
 	// FIXME Only works at the beginning... Cope with new paths during the connection
-	if hasRetransmission && hasStreamRetransmission && fromPth.rttStats.SmoothedRTT() == 0 {
+	if hasRetransmission && hasStreamRetransmission && fromPth.RttStats.SmoothedRTT() == 0 {
 		// Is there any other path with a lower number of packet sent?
-		currentQuota := sch.quotas[fromPth.pathID]
-		for pathID, pth := range s.paths {
-			if pathID == protocol.InitialPathID || pathID == fromPth.pathID {
+		currentQuota := sch.quotas[fromPth.PathID]
+		for PathID, pth := range s.paths {
+			if PathID == protocol.InitialPathID || PathID == fromPth.PathID {
 				continue
 			}
 			// The congestion window was checked when duplicating the packet
-			if sch.quotas[pathID] < currentQuota {
+			if sch.quotas[PathID] < currentQuota {
 				return pth
 			}
 		}
@@ -154,23 +154,23 @@ func (sch *scheduler) selectPathLowLatency(s *session, hasRetransmission bool, h
 	selectedPathID := protocol.PathID(255)
 
 pathLoop:
-	for pathID, pth := range s.paths {
+	for PathID, pth := range s.paths {
 		// Don't block path usage if we retransmit, even on another path
 		if !hasRetransmission && !pth.SendingAllowed() {
 			continue pathLoop
 		}
 
 		// If this path is potentially failed, do not consider it for sending
-		if pth.potentiallyFailed.Get() {
+		if pth.PotentiallyFailed.Get() {
 			continue pathLoop
 		}
 
-		// XXX Prevent using initial pathID if multiple paths
-		if pathID == protocol.InitialPathID {
+		// XXX Prevent using initial PathID if multiple paths
+		if PathID == protocol.InitialPathID {
 			continue pathLoop
 		}
 
-		currentRTT = pth.rttStats.SmoothedRTT()
+		currentRTT = pth.RttStats.SmoothedRTT()
 
 		// Prefer staying single-path if not blocked by current path
 		// Don't consider this sample if the smoothed RTT is 0
@@ -180,9 +180,9 @@ pathLoop:
 
 		// Case if we have multiple paths unprobed
 		if currentRTT == 0 {
-			currentQuota, ok := sch.quotas[pathID]
+			currentQuota, ok := sch.quotas[PathID]
 			if !ok {
-				sch.quotas[pathID] = 0
+				sch.quotas[PathID] = 0
 				currentQuota = 0
 			}
 			lowerQuota, _ := sch.quotas[selectedPathID]
@@ -198,7 +198,7 @@ pathLoop:
 		// Update
 		lowerRTT = currentRTT
 		selectedPath = pth
-		selectedPathID = pathID
+		selectedPathID = PathID
 	}
 
 	return selectedPath
@@ -215,7 +215,7 @@ func (sch *scheduler) selectPath(s *session, hasRetransmission bool, hasStreamRe
 // Lock of s.paths must be free (in case of log print)
 func (sch *scheduler) performPacketSending(s *session, windowUpdateFrames []*wire.WindowUpdateFrame, pth *path) (*ackhandler.Packet, bool, error) {
 	// add a retransmittable frame
-	if pth.sentPacketHandler.ShouldSendRetransmittablePacket() {
+	if pth.SentPacketHandler.ShouldSendRetransmittablePacket() {
 		s.packer.QueueControlFrame(&wire.PingFrame{}, pth)
 	}
 	packet, err := s.packer.PackPacket(pth)
@@ -232,7 +232,7 @@ func (sch *scheduler) performPacketSending(s *session, windowUpdateFrames []*wir
 	}
 
 	// Packet sent, so update its quota
-	sch.quotas[pth.pathID]++
+	sch.quotas[pth.PathID]++
 
 	// Provide some logging if it is the last packet
 	for _, frame := range packet.frames {
@@ -242,10 +242,10 @@ func (sch *scheduler) performPacketSending(s *session, windowUpdateFrames []*wir
 				// Last packet to send on the stream, print stats
 				s.pathsLock.RLock()
 				utils.Infof("Info for stream %x of %x", frame.StreamID, s.connectionID)
-				for pathID, pth := range s.paths {
-					sntPkts, sntRetrans, sntLost := pth.sentPacketHandler.GetStatistics()
-					rcvPkts := pth.receivedPacketHandler.GetStatistics()
-					utils.Infof("Path %x: sent %d retrans %d lost %d; rcv %d rtt %v", pathID, sntPkts, sntRetrans, sntLost, rcvPkts, pth.rttStats.SmoothedRTT())
+				for PathID, pth := range s.paths {
+					sntPkts, sntRetrans, sntLost := pth.SentPacketHandler.GetStatistics()
+					rcvPkts := pth.ReceivedPacketHandler.GetStatistics()
+					utils.Infof("Path %x: sent %d retrans %d lost %d; rcv %d rtt %v", PathID, sntPkts, sntRetrans, sntLost, rcvPkts, pth.RttStats.SmoothedRTT())
 				}
 				s.pathsLock.RUnlock()
 			}
@@ -283,7 +283,7 @@ func (sch *scheduler) ackRemainingPaths(s *session, totalWindowUpdateFrames []*w
 			s.packer.QueueControlFrame(wuf, pthTmp)
 		}
 		if ackTmp != nil || len(windowUpdateFrames) > 0 {
-			if pthTmp.pathID == protocol.InitialPathID && ackTmp == nil {
+			if pthTmp.PathID == protocol.InitialPathID && ackTmp == nil {
 				continue
 			}
 			swf := pthTmp.GetStopWaitingFrame(false)
@@ -319,7 +319,7 @@ func (sch *scheduler) sendPacket(s *session) error {
 	// Update leastUnacked value of paths
 	s.pathsLock.RLock()
 	for _, pthTmp := range s.paths {
-		pthTmp.SetLeastUnacked(pthTmp.sentPacketHandler.GetLeastUnacked())
+		pthTmp.SetLeastUnacked(pthTmp.SentPacketHandler.GetLeastUnacked())
 	}
 	s.pathsLock.RUnlock()
 
@@ -350,7 +350,7 @@ func (sch *scheduler) sendPacket(s *session) error {
 
 		// If we have an handshake packet retransmission, do it directly
 		if hasRetransmission && retransmitHandshakePacket != nil {
-			s.packer.QueueControlFrame(pth.sentPacketHandler.GetStopWaitingFrame(true), pth)
+			s.packer.QueueControlFrame(pth.SentPacketHandler.GetStopWaitingFrame(true), pth)
 			packet, err := s.packer.PackHandshakeRetransmission(retransmitHandshakePacket, pth)
 			if err != nil {
 				return err
@@ -369,7 +369,7 @@ func (sch *scheduler) sendPacket(s *session) error {
 			s.packer.QueueControlFrame(ack, pth)
 		}
 		if ack != nil || hasStreamRetransmission {
-			swf := pth.sentPacketHandler.GetStopWaitingFrame(hasStreamRetransmission)
+			swf := pth.SentPacketHandler.GetStopWaitingFrame(hasStreamRetransmission)
 			if swf != nil {
 				s.packer.QueueControlFrame(swf, pth)
 			}
@@ -402,24 +402,24 @@ func (sch *scheduler) sendPacket(s *session) error {
 
 		// Duplicate traffic when it was sent on an unknown performing path
 		// FIXME adapt for new paths coming during the connection
-		if pth.rttStats.SmoothedRTT() == 0 {
-			currentQuota := sch.quotas[pth.pathID]
+		if pth.RttStats.SmoothedRTT() == 0 {
+			currentQuota := sch.quotas[pth.PathID]
 			// Was the packet duplicated on all potential paths?
 		duplicateLoop:
-			for pathID, tmpPth := range s.paths {
-				if pathID == protocol.InitialPathID || pathID == pth.pathID {
+			for PathID, tmpPth := range s.paths {
+				if PathID == protocol.InitialPathID || PathID == pth.PathID {
 					continue
 				}
-				if sch.quotas[pathID] < currentQuota && tmpPth.sentPacketHandler.SendingAllowed() {
+				if sch.quotas[PathID] < currentQuota && tmpPth.SentPacketHandler.SendingAllowed() {
 					// Duplicate it
-					pth.sentPacketHandler.DuplicatePacket(pkt)
+					pth.SentPacketHandler.DuplicatePacket(pkt)
 					break duplicateLoop
 				}
 			}
 		}
 
 		// And try pinging on potentially failed paths
-		if fromPth != nil && fromPth.potentiallyFailed.Get() {
+		if fromPth != nil && fromPth.PotentiallyFailed.Get() {
 			err = s.sendPing(fromPth)
 			if err != nil {
 				return err

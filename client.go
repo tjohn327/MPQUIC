@@ -130,7 +130,7 @@ func DialNonFWSecure(
 		versionNegotiationChan: make(chan struct{}),
 	}
 	// It's the responsibility of the client to give a proper connection
-	conn := &conn{pconn: c.pconnMgr.pconnAny, currentAddr: remoteAddr}
+	conn := &conn{Pconn: c.pconnMgr.pconnAny, CurrentAddr: remoteAddr}
 
 	utils.Infof("Starting new connection to %s (%s -> %s), connectionID %x, version %s", hostname, conn.LocalAddr().String(), conn.RemoteAddr().String(), c.connectionID, c.version)
 
@@ -385,7 +385,7 @@ func (c *client) handlePacketWithVersionFlag(hdr *wire.PublicHeader, remoteAddr 
 	oldSession := c.session
 	defer oldSession.Close(errCloseSessionForNewVersion)
 	// It's the responsibility of the client to give a proper connection
-	conn := &conn{pconn: c.pconnMgr.pconnAny, currentAddr: remoteAddr}
+	conn := &conn{Pconn: c.pconnMgr.pconnAny, CurrentAddr: remoteAddr}
 	return c.createNewSession(hdr.SupportedVersions, conn)
 }
 

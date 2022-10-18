@@ -53,9 +53,9 @@ func (pm *pathManager) setup(conn connection) {
 
 	// Setup the first path of the connection
 	pm.sess.paths[protocol.InitialPathID] = &path{
-		pathID: protocol.InitialPathID,
-		sess:   pm.sess,
-		conn:   conn,
+		PathID: protocol.InitialPathID,
+		Sess:   pm.sess,
+		Conn:   conn,
 	}
 
 	// Setup this first path
@@ -135,8 +135,8 @@ func (pm *pathManager) createPath(locAddr net.UDPAddr, remAddr net.UDPAddr) erro
 	defer pm.sess.pathsLock.Unlock()
 	paths := pm.sess.paths
 	for _, pth := range paths {
-		locAddrPath := pth.conn.LocalAddr().String()
-		remAddrPath := pth.conn.RemoteAddr().String()
+		locAddrPath := pth.Conn.LocalAddr().String()
+		remAddrPath := pth.Conn.RemoteAddr().String()
 		if locAddr.String() == locAddrPath && remAddr.String() == remAddrPath {
 			// Path already exists, so don't create it again
 			return nil
@@ -144,9 +144,9 @@ func (pm *pathManager) createPath(locAddr net.UDPAddr, remAddr net.UDPAddr) erro
 	}
 	// No matching path, so create it
 	pth := &path{
-		pathID: pm.nxtPathID,
-		sess:   pm.sess,
-		conn:   &conn{pconn: pm.pconnMgr.pconns[locAddr.String()], currentAddr: &remAddr},
+		PathID: pm.nxtPathID,
+		Sess:   pm.sess,
+		Conn:   &conn{Pconn: pm.pconnMgr.pconns[locAddr.String()], CurrentAddr: &remAddr},
 	}
 	pth.setup(pm.oliaSenders)
 	pm.sess.paths[pm.nxtPathID] = pth
@@ -217,9 +217,9 @@ func (pm *pathManager) createPathFromRemote(p *receivedPacket) (*path, error) {
 	}
 
 	pth := &path{
-		pathID: pathID,
-		sess:   pm.sess,
-		conn:   &conn{pconn: localPconn, currentAddr: remoteAddr},
+		PathID: pathID,
+		Sess:   pm.sess,
+		Conn:   &conn{Pconn: localPconn, CurrentAddr: remoteAddr},
 	}
 
 	pth.setup(pm.oliaSenders)
@@ -257,8 +257,8 @@ func (pm *pathManager) closePath(pthID protocol.PathID) error {
 		return nil
 	}
 
-	if pth.open.Get() {
-		pth.closeChan <- nil
+	if pth.Open.Get() {
+		pth.CloseChan <- nil
 	}
 
 	return nil
@@ -268,9 +268,9 @@ func (pm *pathManager) closePaths() {
 	pm.sess.pathsLock.RLock()
 	paths := pm.sess.paths
 	for _, pth := range paths {
-		if pth.open.Get() {
+		if pth.Open.Get() {
 			select {
-			case pth.closeChan <- nil:
+			case pth.CloseChan <- nil:
 			default:
 				// Don't remain stuck here!
 			}
